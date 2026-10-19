@@ -104,3 +104,40 @@ assets/    models/, textures/, audio/
   и присылает скриншоты.
 - Делай маленькими шагами; после каждого шага кратко пиши, что проверить руками на ПК и на телефоне.
 - Не добавляй механики сверх описанных без согласования.
+
+## Состояние проекта и план (обновлять в конце каждой сессии)
+
+### Сделано (октябрь 2026)
+- Окружение: Godot 4.7.2 (`~/apps/godot`, `godot` в PATH), шаблоны экспорта, JDK 17, Android SDK
+  в `~/Android/Sdk` (build-tools 35.0.1, android-35), Blender 5.2.2 (`blender` в PATH).
+  Единый adb — `~/Android/Sdk/platform-tools/adb`. Телефон: Nothing A001, Android 16, Mali-G615.
+- Уровень 1 «Детская» играбелен целиком (короткая прототипная раскладка ~15 с):
+  искорки → свет, банка, ночник, чекпоинты у провалов, подушка-батут (баллистический полёт
+  к чекпоинту), Астра-проводник по маркерам `AstraPath` (Stop_/Run_/hop/Exit), выход у Астры →
+  праздник → затемнение → следующий уровень (пока — «Детская» заново).
+- Прожекторы тёмного начала (группа `start_spotlight`, на Августе и Астре) гаснут к `spotlight_fade`.
+- Кнопки: подсветка + вибрация. Задержка ввода снижена: очередь кадров 1, swapchain 2,
+  физика 120 Гц, agile input flushing, Swappy выключен.
+- Модели: Август — `assets/models/avgust/` (форма из Hunyuan3D по референсу, покраска, скелет
+  и анимации скриптами `tools/blender/paint_avgust.py`, `rig_avgust.py`); Астра —
+  `assets/models/astra/` (с нуля: `astra_shape.py`, `build_astra.py`, `rig_astra.py`).
+  Цвета — цвета вершин, материал внешний (`*_material.tres`, `vertex_color_is_srgb`).
+
+### Как проверять
+- Импорт/ошибки: `godot --headless --path . --import`, затем `godot --headless --path . --quit-after 120`.
+- Бот-прохождение: `godot --headless --path . --fixed-fps 60 -s $PWD/tools/tests/bot_playthrough.gd`
+  (должно быть `LEVEL COMPLETED`). Мультитач: `tools/tests/touch_test.gd`.
+- Скриншоты сцены: `SHOT_DIR=<папка> godot --path . --resolution 1280x720 -s $PWD/tools/tests/screenshots.gd`.
+- Рендеры моделей/анимаций в Blender: `tools/blender/preview/*.py`.
+- APK: `godot --headless --path . --export-debug "Android" build/avgust-debug.apk`, затем
+  `adb install -r build/avgust-debug.apk` (пресет `export_presets.cfg` не в git — пересоздать:
+  Android, arm64, immersive, vibrate, package `com.vasinkostya.avgust`).
+
+### Дальше по плану
+1. Кучка кирпичиков `brick_pile.tscn`: подходишь — кирпичики сами строят лестницу/мост.
+2. Экраны без текста: старт (большая кнопка «играть»), выбор уровня картинками, прогресс (`Game`).
+3. Уровень 2 «Ванная»: плавающие игрушки, надувной круг при падении в воду, лампочки у зеркала.
+4. Уровень 3 «Кухня»: стулья, стол, крышки-трамплины, лампа над столом.
+5. Уровень 4 «Гостиная»: финал, гирлянда, торшер, спящая Астра (анимация `sleep` готова).
+6. Полная раскладка «Детской» на 2–4 минуты; мебель/окружение в гладком мультяшном стиле.
+7. Звуки и музыка (CC0), иконка, релизная подпись APK.

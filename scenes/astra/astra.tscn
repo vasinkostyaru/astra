@@ -10,3 +10,13 @@ script = ExtResource("1_astra")
 transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)
 
 [node name="AstraModel" parent="Model" instance=ExtResource("2_model")]
+
+[node name="Spotlight" type="SpotLight3D" parent="." groups=["start_spotlight"]]
+transform = Transform3D(1, 0, 0, 0, 0.962, 0.275, 0, -0.275, 0.962, 0, 0.9, 1.9)
+light_color = Color(1, 0.96, 0.9, 1)
+light_energy = 0.8
+light_specular = 0.1
+spot_range = 3.5
+spot_attenuation = 0.5
+spot_angle = 10.0
+spot_angle_attenuation = 2.0

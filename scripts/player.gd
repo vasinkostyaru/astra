@@ -21,8 +21,6 @@ signal respawned
 @export var return_gravity: float = 14.0
 
 @onready var model: Node3D = $Model
-## Прожектор над Августом: виден в тёмной сцене, гаснет по мере того, как комната светлеет.
-@onready var spotlight: SpotLight3D = get_node_or_null("Spotlight")
 
 var respawn_point: Vector3
 
@@ -132,13 +130,10 @@ func _launch_return() -> void:
 
 	var fly := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	fly.tween_method(_fly_step.bind(arc), 0.0, duration, duration)
-	fly.tween_property(model, "scale", _model_scale * Vector3(1.15, 0.85, 1.15), 0.08)
-	fly.tween_property(model, "scale", _model_scale, 0.18).set_trans(Tween.TRANS_SINE)
+	# Лёгкое приседание при приземлении (модель не растягиваем — у живого персонажа это выглядит странно).
+	fly.tween_property(model, "scale", _model_scale * Vector3(1.04, 0.95, 1.04), 0.07)
+	fly.tween_property(model, "scale", _model_scale, 0.15).set_trans(Tween.TRANS_SINE)
 	fly.tween_callback(_finish_return)
-	# Вытянулся на взлёте и вернулся к обычной форме до приземления.
-	var shape := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	shape.tween_property(model, "scale", _model_scale * Vector3(0.88, 1.15, 0.88), 0.12)
-	shape.tween_property(model, "scale", _model_scale, duration * 0.5).set_delay(duration * 0.15)
 
 
 ## Радость: прыжки на месте (или анимация happy, если она есть у модели).
@@ -214,9 +209,9 @@ func _finish_return() -> void:
 func _jump_stretch() -> void:
 	if _stretch_tween:
 		_stretch_tween.kill()
-	model.scale = _model_scale * Vector3(0.85, 1.2, 0.85)
+	model.scale = _model_scale * Vector3(0.97, 1.05, 0.97)
 	_stretch_tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	_stretch_tween.tween_property(model, "scale", _model_scale, 0.25) \
+	_stretch_tween.tween_property(model, "scale", _model_scale, 0.15) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 

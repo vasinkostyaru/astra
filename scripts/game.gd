@@ -46,7 +46,8 @@ func go_to_level(index: int) -> void:
 
 
 func go_to_next_level() -> void:
-	go_to_level(current_level + 1)
+	# Пока следующих уровней нет — начинаем сначала.
+	go_to_level((current_level + 1) % LEVELS.size())
 
 
 ## Звон искорки; step — порядковый номер собранной искорки (с 1).

@@ -150,7 +150,7 @@ rings = 4
 [sub_resource type="Gradient" id="Grad_confetti"]
 colors = PackedColorArray(1, 0.95, 0.6, 1, 1, 0.55, 0.3, 1)
 
-[node name="Level01KidsRoom" type="Node3D" node_paths=PackedStringArray("player", "hud", "world_environment", "sun", "level_lights", "main_lamp")]
+[node name="Level01KidsRoom" type="Node3D" node_paths=PackedStringArray("player", "hud", "world_environment", "sun", "level_lights", "main_lamp", "astra")]
 script = ExtResource("1_level")
 player = NodePath("Player")
 hud = NodePath("HUD")
@@ -158,6 +158,7 @@ world_environment = NodePath("WorldEnvironment")
 sun = NodePath("Sun")
 level_lights = NodePath("LevelLights")
 main_lamp = NodePath("NightLamp")
+astra = NodePath("Astra")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Env")
@@ -418,15 +419,47 @@ position = Vector3(14.8, 3.5, 0)
 [node name="Spark9" parent="Sparks" instance=ExtResource("6_spark")]
 position = Vector3(18.9, 3, 0)
 
-[node name="Astra" parent="." instance=ExtResource("10_astra")]
-position = Vector3(19.3, 2.4, -0.3)
-rotation_degrees = Vector3(0, -90, 0)
+[node name="AstraPath" type="Node3D" parent="."]
+
+[node name="Stop_Start" type="Marker3D" parent="AstraPath"]
+position = Vector3(3, 0, -0.45)
+
+[node name="Run_Floor" type="Marker3D" parent="AstraPath"]
+position = Vector3(4.0, 0, -0.45)
+
+[node name="Run_Step1" type="Marker3D" parent="AstraPath"]
+position = Vector3(4.9, 0.6, -0.45)
+
+[node name="Run_Step2" type="Marker3D" parent="AstraPath"]
+position = Vector3(6.0, 1.2, -0.45)
+
+[node name="Stop_Stairs" type="Marker3D" parent="AstraPath"]
+position = Vector3(7.3, 1.8, -0.45)
+
+[node name="Stop_Tower_hop" type="Marker3D" parent="AstraPath"]
+position = Vector3(10.2, 1.8, -0.45)
+
+[node name="Run_BedEdge" type="Marker3D" parent="AstraPath"]
+position = Vector3(11.3, 2.4, -0.45)
+
+[node name="Stop_Bed" type="Marker3D" parent="AstraPath"]
+position = Vector3(14.0, 2.4, -0.45)
+
+[node name="Run_BedEnd" type="Marker3D" parent="AstraPath"]
+position = Vector3(16.5, 2.4, -0.45)
+
+[node name="Exit_hop" type="Marker3D" parent="AstraPath"]
+position = Vector3(19.2, 2.4, -0.45)
+
+[node name="Astra" parent="." node_paths=PackedStringArray("path", "player") instance=ExtResource("10_astra")]
+path = NodePath("../AstraPath")
+player = NodePath("../Player")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 
 [node name="SideCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("3_cam")]
 target = NodePath("../Player")
 limit_left = 1.5
-limit_right = 15.0
+limit_right = 16.0
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]

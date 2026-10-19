@@ -21,7 +21,7 @@ shape = SubResource("Shape_body")
 [node name="Avgust" parent="Model" instance=ExtResource("2_avgust")]
 rotation_degrees = Vector3(0, 90, 0)
 
-[node name="Spotlight" type="SpotLight3D" parent="."]
+[node name="Spotlight" type="SpotLight3D" parent="." groups=["start_spotlight"]]
 transform = Transform3D(1, 0, 0, 0, 0.962, 0.275, 0, -0.275, 0.962, 0, 1.25, 2.2)
 light_color = Color(1, 0.96, 0.9, 1)
 light_energy = 1.0
