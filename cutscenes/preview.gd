@@ -8,12 +8,14 @@ const NAMES: Array[StringName] = [
 	&"finale",
 	&"second_round_start",
 ]
+## 5–7 — тот же переход, но в другую комнату (для подгонки палитры).
+const ROOMS: Array[StringName] = [&"bathroom", &"kitchen", &"living"]
 
 
 func _ready() -> void:
 	DisplayServer.window_set_title(
-		"cutscenes: 1 intro | 2 transition | 3 finale | 4 second_round_start | пробел — пропуск | Esc — выход")
-	print("cutscenes preview: 1 intro | 2 transition | 3 finale | 4 second_round_start")
+		"cutscenes: 1 intro | 2 transition | 3 finale | 4 second_round_start | 5-7 переходы в ванную/кухню/гостиную")
+	print("cutscenes preview: 1 intro | 2 transition | 3 finale | 4 second_round_start | 5-7 комнаты перехода")
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -26,5 +28,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			print("cutscenes preview: играем ", name)
 		else:
 			print("cutscenes preview: ролика ", name, " пока нет")
+	elif key >= KEY_5 and key <= KEY_7:
+		var room: StringName = ROOMS[key - KEY_5]
+		if Cutscenes.play(&"transition", {"room": room}):
+			print("cutscenes preview: переход в ", room)
 	elif key == KEY_ESCAPE:
 		get_tree().quit()

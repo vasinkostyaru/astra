@@ -33,10 +33,10 @@ const POT_X := 2.85
 const POT_TOP := 0.9
 
 ## Август, Астра и башня из кирпичиков.
-const AVGUST_HOME := Vector3(-1.05, 0.0, 0.35)
+const AVGUST_HOME := Vector3(-1.05, 0.012, 0.35)
 const ASTRA_HOME := Vector3(2.0, BENCH_TOP, -2.15)
 const ASTRA_STEP_X := 2.4
-const ASTRA_LAND := Vector3(0.9, 0.0, 0.3)
+const ASTRA_LAND := Vector3(0.9, 0.012, 0.3)
 const BRICK_SIZE := Vector3(0.32, 0.16, 0.16)
 ## Башня: два кирпичика уже стоят, два прилетают во время ролика.
 const TOWER_A := Vector3(-0.45, 0.08, -0.4)
@@ -131,11 +131,13 @@ func _prepare() -> void:
 	_build_bush()
 
 	_avgust = CutActors.spawn_avgust(_heroes)
+	CutActors.matte(_avgust)
 	_avgust.position = AVGUST_HOME
 	CutActors.face_avgust(_avgust, CutActors.RIGHT)
 	CutActors.play(_avgust, &"idle")
 
 	_astra = CutActors.spawn_astra(_heroes)
+	CutActors.matte(_astra)
 	_astra.position = ASTRA_HOME
 	CutActors.face_astra(_astra, CutActors.LEFT)
 	CutActors.play(_astra, &"idle")
@@ -313,13 +315,13 @@ func _build_room() -> void:
 	CutSet.add_box(_set_root, "Wall", WALL_SIZE, WALL_POS, cream)
 	CutSet.add_box(_set_root, "Baseboard", Vector3(11.5, 0.18, 0.08),
 		Vector3(-0.3, 0.09, -2.56), baseboard)
-	CutSet.add_box(_set_root, "Rug", Vector3(2.8, 0.02, 1.9),
-		Vector3(-0.5, 0.011, 0.25), CutSet.material(Color(0.42, 0.58, 0.66), 0.95))
+	CutSet.add_box(_set_root, "Rug", Vector3(2.8, 0.006, 1.9),
+		Vector3(-0.5, -0.002, 0.25), CutSet.material(Color(0.42, 0.58, 0.66), 0.95))
 
 	# Окно: светящееся стекло, белая рама и переплёт.
 	var glass_z := -2.6
 	CutSet.add_box(_set_root, "WindowGlass", Vector3(WINDOW_W, WINDOW_H, 0.04),
-		Vector3(WINDOW_X, WINDOW_Y, glass_z), CutSet.sky(Color(0.72, 0.87, 1.0), 1.3))
+		Vector3(WINDOW_X, WINDOW_Y, glass_z), CutSet.sky(Color(0.72, 0.87, 1.0), 0.8))
 	CutSet.add_box(_set_root, "WindowFrameTop", Vector3(WINDOW_W + 0.16, 0.1, 0.12),
 		Vector3(WINDOW_X, WINDOW_Y + WINDOW_H * 0.5 + 0.05, -2.56), white)
 	CutSet.add_box(_set_root, "WindowFrameBottom", Vector3(WINDOW_W + 0.16, 0.1, 0.12),

@@ -14,6 +14,7 @@ var _chime: AudioStreamWAV
 var _tap: AudioStreamWAV
 var _purr: AudioStreamWAV
 var _melody: AudioStreamWAV
+var _door: AudioStreamWAV
 
 
 func _exit_tree() -> void:
@@ -31,6 +32,7 @@ func _ready() -> void:
 	_tap = _make_tap()
 	_purr = _make_purr()
 	_melody = _make_melody()
+	_door = _make_door()
 
 
 ## «Пиф» — ягодка лопается.
@@ -67,6 +69,11 @@ func purr() -> void:
 ## Короткая тёплая мелодия на входе.
 func melody() -> void:
 	_play(_melody, 1.0, -3.0)
+
+
+## Скрип двери в переходе: низкий тон с дрожанием и шорохом.
+func door_creak() -> void:
+	_play(_door, randf_range(0.96, 1.04), -1.0)
 
 
 # --- воспроизведение -------------------------------------------------------
@@ -196,6 +203,27 @@ func _make_purr() -> AudioStreamWAV:
 		phase += TAU * 62.0 / RATE
 		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.05)
 		var s := (sin(phase) * 0.8 + noise * 0.5) * am
+		_write(data, i, s * env * 0.3)
+	return _finish(data)
+
+
+## Скрип двери: медленный низкий подъём тона и тихий шорох.
+func _make_door() -> AudioStreamWAV:
+	var length := 0.85
+	var parts := _wav(length)
+	var data: PackedByteArray = parts[0]
+	var count: int = parts[1]
+	var phase := 0.0
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / RATE
+		var k := t / length
+		var freq := lerpf(92.0, 148.0, k)
+		phase += TAU * freq / RATE
+		var env := minf(t / 0.08, 1.0) * (1.0 - smoothstep(0.55, 1.0, k))
+		var wobble := 1.0 + 0.25 * sin(TAU * 9.0 * t)
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.06)
+		var s := (sin(phase) * 0.7 + noise * 0.25) * wobble
 		_write(data, i, s * env * 0.3)
 	return _finish(data)
 

@@ -28,7 +28,9 @@ var managed: bool = false
 var running: bool = false
 var done: bool = false
 
-var _params: Dictionary = {}
+## Параметры ролика (например, комната для перехода). Автолоад ставит их до add_child,
+## чтобы _prepare() уже их видел; при самостоятельном запуске словарь пуст.
+var params: Dictionary = {}
 var _cues: Array[Dictionary] = []
 var _tweens: Array[Tween] = []
 var _timeline: Tween
@@ -57,10 +59,10 @@ func _apply_final_state() -> void:
 	pass
 
 
-func start(params: Dictionary = {}) -> void:
+func start(play_params: Dictionary = {}) -> void:
 	if running or done:
 		return
-	_params = params
+	params = play_params
 	running = true
 	_build()
 	# Реплики могут быть добавлены в любом порядке — играем по времени.
@@ -155,6 +157,24 @@ func walk_x(who: Node3D, to_x: float, sec: float, state: StringName = &"walk", s
 	return tw
 
 
+## «Оглянуться» (Астра): разворот модели на ~150° за 0.3 с, пауза 0.5 с и возврат.
+## Крутится только модель — позицию ролик продолжает вести сам.
+func astra_look_back(who: Node3D, from_dir: float, turn_deg: float = 150.0,
+		dur: float = 0.3, hold: float = 0.5) -> Tween:
+	var model := who.get_node_or_null("Model") as Node3D
+	if model == null:
+		return null
+	CutActors.play(who, &"idle")
+	var start_angle := from_dir * PI * 0.5
+	# Разворот в сторону камеры: от профиля к «лицом к экрану» и дальше.
+	var mid := start_angle - signf(from_dir) * deg_to_rad(turn_deg)
+	var tw := new_tween()
+	tw.tween_property(model, "rotation:y", mid, dur).set_trans(Tween.TRANS_SINE)
+	tw.tween_interval(hold)
+	tw.tween_property(model, "rotation:y", start_angle, dur).set_trans(Tween.TRANS_SINE)
+	return tw
+
+
 ## Прыжок по дуге: «клип run + движение по дуге» для Астры, jump/fall для Августа.
 func arc_move(who: Node3D, to: Vector3, sec: float, arc: float,
 		state: StringName = &"jump", speed := 1.0) -> Tween:
@@ -224,6 +244,17 @@ func _restart_when_standalone() -> void:
 	await get_tree().create_timer(1.0).timeout
 	if is_inside_tree():
 		get_tree().reload_current_scene()
+
+
+## Перед удалением снимаем временные материалы героев — чтобы сцена освобождалась чисто.
+func _exit_tree() -> void:
+	for child in find_children("*", "MeshInstance3D", true, false):
+		var mi := child as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		for surface in mi.mesh.get_surface_count():
+			mi.set_surface_override_material(surface, null)
+		mi.material_override = null
 
 
 func _input(event: InputEvent) -> void:

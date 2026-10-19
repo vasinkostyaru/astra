@@ -85,6 +85,35 @@ func _go() -> void:
 		return
 	print("SMOKE: повторный play ok")
 
+	# 4. Переход: все комнаты — полный просмотр и пропуск.
+	var rooms: Array[StringName] = [&"bathroom", &"kitchen", &"living"]
+	for room: StringName in rooms:
+		finished.clear()
+		cutscenes.play(&"transition", {"room": room})
+		await process_frame
+		if not cutscenes.is_playing:
+			_fail("переход %s не начался" % room)
+			return
+		frames = 0
+		while cutscenes.is_playing and frames < 60 * 10:
+			await process_frame
+			frames += 1
+		if cutscenes.is_playing:
+			_fail("переход %s завис" % room)
+			return
+		if finished.size() != 1 or finished[0] != &"transition":
+			_fail("переход %s не дал finished: %s" % [room, str(finished)])
+			return
+		finished.clear()
+		cutscenes.play(&"transition", {"room": room})
+		await process_frame
+		await process_frame
+		cutscenes.skip()
+		if cutscenes.is_playing or finished.size() != 1:
+			_fail("пропуск перехода %s сломан" % room)
+			return
+		print("SMOKE: переход ", room, " ok (", frames, " кадров)")
+
 	if paused:
 		_fail("дерево осталось на паузе")
 		return

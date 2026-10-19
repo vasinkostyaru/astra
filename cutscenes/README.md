@@ -6,7 +6,8 @@
 ## Как посмотреть
 
 ```bash
-# все ролики, выбор клавишами 1–4 (Esc — выход, пробел/клик — пропуск)
+# все ролики, выбор клавишами 1–4 (5–7 — переходы в ванную/кухню/гостиную),
+# Esc — выход, пробел/клик — пропуск
 godot --path . cutscenes/preview.tscn
 
 # один ролик: запускается сам и после конца играет заново
@@ -40,6 +41,7 @@ godot --headless --path . --fixed-fps 60 -s cutscenes/tests/smoke.gd
 | `props/` | заглушки, которые легко заменить моделью: `berry_stub.tscn`, `bush_stub.tscn`, `sparkles.tscn` |
 | `preview.tscn/.gd` | просмотрщик для ПК (не часть игры) |
 | `intro.tscn/.gd` | ролик intro |
+| `transition_room.tscn/.gd` | универсальный переход между комнатами (палитра по `room`) |
 | `tests/` | скрипты проверки и кадры |
 
 ### Скелет сцены ролика
@@ -88,6 +90,13 @@ func _shrink() -> void:
 
 Касание в любом месте экрана (на ПК — клик, пробел, Enter) пропускает ролик. Иконок и текста нет.
 
+### Свет и материалы
+
+Свет роликов вынесен в сцену: `WorldEnvironment` (ambient, exposure, туман), `Sun`, `Fill`
+и `WindowLight`/`DoorLight` — всё крутится в инспекторе. Герои внутри ролика получают
+матовый материал (`CutActors.matte`): блик убирается только на время ролика, общие
+`assets/models/*/*_material.tres` не меняются.
+
 ## Точки интеграции для основной сессии
 
 1. Автолоад уже добавлен в `project.godot`:
@@ -109,12 +118,16 @@ func _shrink() -> void:
 
    `play()` возвращает `false`, если ролика нет в `SCENES`.
 
-3. Переходы между комнатами (появятся на шаге 2):
+3. Переходы между комнатами (`room` — куда идём: `bathroom`, `kitchen`, `living`, `kids`):
 
    ```gdscript
    Cutscenes.play(&"transition", {"room": &"bathroom"})
    await Cutscenes.finished
+   Game.go_to_level(1)   # под чёрным кадром в конце ролика
    ```
+
+   Параметры ролика автолоад ставит до `add_child`, поэтому `_prepare()` уже видит `room`.
+   При самостоятельном запуске `transition_room.tscn` комната берётся из `default_room` в инспекторе.
 
 4. Финал и второй круг (шаг 3): `Cutscenes.play(&"finale")`, после него — смена света дня и
    `Cutscenes.play(&"second_round_start")`.

@@ -12,6 +12,7 @@ signal finished(name: StringName)
 
 const SCENES: Dictionary = {
 	&"intro": "res://cutscenes/intro.tscn",
+	&"transition": "res://cutscenes/transition_room.tscn",
 }
 
 var is_playing: bool = false
@@ -92,6 +93,7 @@ func play(name: StringName, params: Dictionary = {}) -> bool:
 	_played[name] = true
 	_cut = cut
 	cut.managed = true
+	cut.params = params
 	_viewport.add_child(cut)
 	cut.finished.connect(_on_cut_finished)
 

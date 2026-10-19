@@ -29,6 +29,24 @@ static func spawn_astra(parent: Node) -> Astra:
 	return a
 
 
+## Матовый материал героям ролика: убираем блик (модели выглядят «пластиково»),
+## не трогая общий материал игры.
+static func matte(who: Node, roughness: float = 1.0, specular: float = 0.0) -> void:
+	for child in who.find_children("*", "MeshInstance3D", true, false):
+		var mi := child as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		for surface in mi.mesh.get_surface_count():
+			var source: Material = mi.get_surface_override_material(surface)
+			if source == null:
+				source = mi.mesh.surface_get_material(surface)
+			if source is StandardMaterial3D:
+				var mat := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
+				mat.roughness = roughness
+				mat.metallic_specular = specular
+				mi.set_surface_override_material(surface, mat)
+
+
 static func anim_player(who: Node) -> AnimationPlayer:
 	var players := who.find_children("*", "AnimationPlayer", true, false)
 	return players[0] as AnimationPlayer if not players.is_empty() else null
