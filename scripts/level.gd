@@ -12,12 +12,12 @@ extends Node3D
 @export var main_lamp: MainLamp
 ## Сколько искорок нужно для главного светильника; 0 — все на уровне.
 @export_range(0, 100) var sparks_needed: int = 0
-@export var ambient_dark: float = 0.12
+@export var ambient_dark: float = 0.02
 @export var ambient_lit: float = 0.7
-@export var sun_dark: float = 0.1
+@export var sun_dark: float = 0.0
 @export var sun_lit: float = 0.7
 ## Доля яркости светильников уровня в начале.
-@export_range(0.0, 1.0) var lights_dark_factor: float = 0.15
+@export_range(0.0, 1.0) var lights_dark_factor: float = 0.06
 @export var fall_limit_y: float = -6.0
 
 var _required: int = 0
@@ -69,8 +69,10 @@ func _on_all_collected() -> void:
 
 func _apply_light(t: float) -> void:
 	_light = t
+	# Глаз воспринимает яркость нелинейно: по квадрату каждая искорка даёт примерно равный видимый шаг.
+	var k := t * t
 	var env := world_environment.environment
-	env.ambient_light_energy = lerpf(ambient_dark, ambient_lit, t)
-	sun.light_energy = lerpf(sun_dark, sun_lit, t)
+	env.ambient_light_energy = lerpf(ambient_dark, ambient_lit, k)
+	sun.light_energy = lerpf(sun_dark, sun_lit, k)
 	for light: Light3D in _light_bases:
-		light.light_energy = _light_bases[light] * lerpf(lights_dark_factor, 1.0, t)
+		light.light_energy = _light_bases[light] * lerpf(lights_dark_factor, 1.0, k)

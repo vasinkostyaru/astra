@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/common/brick_block.tscn" id="5_bricks"]
 [ext_resource type="PackedScene" path="res://scenes/common/spark.tscn" id="6_spark"]
 [ext_resource type="PackedScene" path="res://scenes/common/checkpoint.tscn" id="7_cp"]
-[ext_resource type="PackedScene" path="res://scenes/common/fall_zone.tscn" id="8_fz"]
+[ext_resource type="PackedScene" path="res://scenes/common/bounce_pillow.tscn" id="8_fz"]
 [ext_resource type="Script" path="res://scripts/main_lamp.gd" id="9_lamp"]
 
 [sub_resource type="Environment" id="Env"]
@@ -15,7 +15,7 @@ background_mode = 1
 background_color = Color(0.07, 0.045, 0.035, 1)
 ambient_light_source = 2
 ambient_light_color = Color(1, 0.78, 0.55, 1)
-ambient_light_energy = 0.12
+ambient_light_energy = 0.02
 tonemap_mode = 2
 glow_enabled = true
 glow_intensity = 0.9
@@ -23,12 +23,13 @@ glow_bloom = 0.05
 fog_enabled = true
 fog_light_color = Color(0.35, 0.24, 0.16, 1)
 fog_density = 0.012
+fog_sky_affect = 0.0
 
 [sub_resource type="BoxShape3D" id="Shape_floor"]
-size = Vector3(44, 1, 8)
+size = Vector3(44, 4, 8)
 
 [sub_resource type="BoxMesh" id="Mesh_floor"]
-size = Vector3(44, 1, 8)
+size = Vector3(44, 4, 8)
 
 [sub_resource type="StandardMaterial3D" id="Mat_wood_floor"]
 albedo_color = Color(0.46, 0.3, 0.18, 1)
@@ -98,13 +99,6 @@ roughness = 1.0
 [sub_resource type="BoxMesh" id="Mesh_bed_pillow"]
 size = Vector3(1.4, 0.35, 1)
 
-[sub_resource type="BoxMesh" id="Mesh_soft_pillow"]
-size = Vector3(1.2, 0.5, 1.8)
-
-[sub_resource type="StandardMaterial3D" id="Mat_soft_pillow"]
-albedo_color = Color(0.6, 0.75, 0.95, 1)
-roughness = 1.0
-
 [sub_resource type="BoxShape3D" id="Shape_nightstand"]
 size = Vector3(2.4, 2.4, 2)
 
@@ -170,7 +164,7 @@ environment = SubResource("Env")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -30, 0)
 light_color = Color(1, 0.85, 0.65, 1)
-light_energy = 0.1
+light_energy = 0.0
 shadow_enabled = true
 
 [node name="LevelLights" type="Node3D" parent="."]
@@ -196,7 +190,7 @@ omni_range = 8.0
 [node name="Room" type="Node3D" parent="."]
 
 [node name="Floor" type="StaticBody3D" parent="Room"]
-position = Vector3(9.5, -0.5, 0)
+position = Vector3(9.5, -2, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Floor"]
 shape = SubResource("Shape_floor")
@@ -303,17 +297,17 @@ mesh = SubResource("Mesh_mattress")
 surface_material_override/0 = SubResource("Mat_linen")
 
 [node name="BlanketTop" type="MeshInstance3D" parent="Bed"]
-position = Vector3(-0.9, 2.41, 0)
+position = Vector3(0.9, 2.41, 0)
 mesh = SubResource("Mesh_blanket_top")
 surface_material_override/0 = SubResource("Mat_blanket")
 
 [node name="BlanketSide" type="MeshInstance3D" parent="Bed"]
-position = Vector3(-0.9, 1.95, 1.26)
+position = Vector3(0.9, 1.95, 1.26)
 mesh = SubResource("Mesh_blanket_side")
 surface_material_override/0 = SubResource("Mat_blanket")
 
 [node name="Pillow" type="MeshInstance3D" parent="Bed"]
-position = Vector3(2.2, 2.58, -0.6)
+position = Vector3(-2.2, 2.58, -0.6)
 mesh = SubResource("Mesh_bed_pillow")
 surface_material_override/0 = SubResource("Mat_linen")
 
@@ -378,21 +372,11 @@ color_ramp = SubResource("Grad_confetti")
 
 [node name="SoftLanding" type="Node3D" parent="."]
 
-[node name="PillowGapStairs" type="MeshInstance3D" parent="SoftLanding"]
-position = Vector3(8.4, 0.25, 0)
-mesh = SubResource("Mesh_soft_pillow")
-surface_material_override/0 = SubResource("Mat_soft_pillow")
+[node name="PillowGapStairs" parent="SoftLanding" instance=ExtResource("8_fz")]
+position = Vector3(8.4, 0, 0)
 
-[node name="FallZoneStairs" parent="SoftLanding" instance=ExtResource("8_fz")]
-position = Vector3(8.4, 0.5, 0)
-
-[node name="PillowGapBed" type="MeshInstance3D" parent="SoftLanding"]
-position = Vector3(17.5, 0.25, 0)
-mesh = SubResource("Mesh_soft_pillow")
-surface_material_override/0 = SubResource("Mat_soft_pillow")
-
-[node name="FallZoneBed" parent="SoftLanding" instance=ExtResource("8_fz")]
-position = Vector3(17.5, 0.5, 0)
+[node name="PillowGapBed" parent="SoftLanding" instance=ExtResource("8_fz")]
+position = Vector3(17.5, 0, 0)
 
 [node name="Checkpoints" type="Node3D" parent="."]
 
@@ -402,7 +386,7 @@ position = Vector3(17.5, 0.5, 0)
 position = Vector3(7.2, 1.8, 0)
 
 [node name="Bed" parent="Checkpoints" instance=ExtResource("7_cp")]
-position = Vector3(12, 2.4, 0)
+position = Vector3(16.1, 2.4, 0)
 
 [node name="Sparks" type="Node3D" parent="."]
 

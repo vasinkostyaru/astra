@@ -15,6 +15,7 @@ var current_level: int = 0
 var completed_levels: Array[int] = []
 
 var _chime: AudioStreamWAV
+var _boing: AudioStreamWAV
 var _voices: Array[AudioStreamPlayer] = []
 var _next_voice: int = 0
 
@@ -22,6 +23,7 @@ var _next_voice: int = 0
 func _ready() -> void:
 	_load_progress()
 	_chime = _make_chime(CHIME_BASE)
+	_boing = _make_boing()
 	for i in VOICES:
 		var p := AudioStreamPlayer.new()
 		p.stream = _chime
@@ -60,9 +62,19 @@ func play_fanfare() -> void:
 		get_tree().create_timer(0.13 * i).timeout.connect(_play_note.bind(notes[i]))
 
 
+## Пружинистый «боинг» подушки-батута.
+func play_boing() -> void:
+	var p := _voices[_next_voice]
+	_next_voice = (_next_voice + 1) % _voices.size()
+	p.stream = _boing
+	p.pitch_scale = 1.0
+	p.play()
+
+
 func _play_note(freq: float) -> void:
 	var p := _voices[_next_voice]
 	_next_voice = (_next_voice + 1) % _voices.size()
+	p.stream = _chime
 	p.pitch_scale = freq / CHIME_BASE
 	p.play()
 
@@ -79,6 +91,32 @@ func _make_chime(freq: float) -> AudioStreamWAV:
 		var env := minf(t / 0.005, 1.0) * exp(-t * 6.0)
 		var s := sin(TAU * freq * t) + 0.35 * sin(TAU * freq * 2.0 * t) + 0.15 * sin(TAU * freq * 3.01 * t)
 		data.encode_s16(i * 2, int(clampf(s * env * 0.35, -1.0, 1.0) * 32767.0))
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = rate
+	wav.stereo = false
+	wav.data = data
+	return wav
+
+
+## Мягкий «пуф-боинг»: шорох ткани и короткий плавный подъём тона.
+func _make_boing() -> AudioStreamWAV:
+	var rate := 22050
+	var length := 0.5
+	var count := int(rate * length)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var phase := 0.0
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / rate
+		var freq := lerpf(196.0, 294.0, smoothstep(0.0, 0.2, t))
+		phase += TAU * freq / rate
+		var tone := sin(phase) * minf(t / 0.02, 1.0) * exp(-t * 7.0)
+		# Мягкий шум (сглаженный) — «пуф» подушки.
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.08)
+		var puff := noise * exp(-t * 25.0) * 1.5
+		data.encode_s16(i * 2, int(clampf((tone + puff) * 0.3, -1.0, 1.0) * 32767.0))
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
 	wav.mix_rate = rate

@@ -15,6 +15,10 @@ signal respawned
 @export var jump_buffer_time: float = 0.15
 ## Ниже этой высоты — мягкое возвращение к чекпоинту (запасной вариант, если упал за пределы уровня).
 @export var fall_limit_y: float = -6.0
+## Возврат к чекпоинту: насколько выше самой высокой опоры на пути вершина дуги
+## и «гравитация» полёта (меньше — дольше и плавнее парит).
+@export var return_arc_height: float = 1.5
+@export var return_gravity: float = 14.0
 
 @onready var model: Node3D = $Model
 
@@ -68,7 +72,7 @@ func _physics_process(delta: float) -> void:
 	position.z = 0.0
 
 	if global_position.y < fall_limit_y:
-		soft_respawn()
+		return_to_checkpoint()
 		return
 
 	_update_facing(dir, delta)
@@ -79,20 +83,58 @@ func set_checkpoint(point: Vector3) -> void:
 	respawn_point = point
 
 
-## Падение без проигрыша: Август «сдувается», переносится на чекпоинт и мягко появляется снова.
-func soft_respawn() -> void:
+## Падение без проигрыша: Август плавной дугой перелетает к последнему чекпоинту.
+## Что его подбрасывает (подушка, круг, пузырь), решает уровень; полёт у всех один.
+func return_to_checkpoint() -> void:
 	if _controls_locked:
 		return
 	_controls_locked = true
 	velocity = Vector3.ZERO
 	_jump_buffer_left = 0.0
+	_launch_return()
+
+
+## Мягкая поверхность поймала Августа: встал на неё, промялся вместе с ней — и полетел к чекпоинту.
+func catch_on(surface_y: float, sink: float, sink_time: float) -> void:
+	if _controls_locked:
+		return
+	_controls_locked = true
+	velocity = Vector3.ZERO
+	_jump_buffer_left = 0.0
+	global_position.y = surface_y
 	var tw := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	tw.tween_property(model, "scale", _model_scale * 0.01, 0.25) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	tw.tween_callback(_teleport_to_checkpoint)
-	tw.tween_property(model, "scale", _model_scale, 0.5) \
-		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	tw.tween_callback(_finish_respawn)
+	tw.tween_property(self, "global_position:y", surface_y - sink, sink_time).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(_launch_return)
+
+
+func _launch_return() -> void:
+	var from := global_position
+	var to := respawn_point + Vector3.UP * 0.05
+	var ground := _ground_profile(from.x, to.x)
+	var top := maxf(from.y, to.y) + return_arc_height
+	for x: float in ground:
+		top = maxf(top, ground[x] + return_arc_height)
+	# Баллистика, как у брошенного мяча: взлёт до вершины top и падение на чекпоинт.
+	# Если дуга задевает мебель — поднимаем вершину.
+	var arc := _make_arc(from, to, top)
+	for i in 6:
+		if _arc_clears(arc, ground):
+			break
+		top += 0.5
+		arc = _make_arc(from, to, top)
+	var duration: float = arc.duration
+	_turn_target = 0.0 if to.x >= from.x else 1.0
+	_play(&"jump")
+
+	var fly := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	fly.tween_method(_fly_step.bind(arc), 0.0, duration, duration)
+	fly.tween_property(model, "scale", _model_scale * Vector3(1.15, 0.85, 1.15), 0.08)
+	fly.tween_property(model, "scale", _model_scale, 0.18).set_trans(Tween.TRANS_SINE)
+	fly.tween_callback(_finish_return)
+	# Вытянулся на взлёте и вернулся к обычной форме до приземления.
+	var shape := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	shape.tween_property(model, "scale", _model_scale * Vector3(0.88, 1.15, 0.88), 0.12)
+	shape.tween_property(model, "scale", _model_scale, duration * 0.5).set_delay(duration * 0.15)
 
 
 ## Радость: прыжки на месте (или анимация happy, если она есть у модели).
@@ -106,12 +148,60 @@ func celebrate() -> void:
 	tw.tween_callback(func() -> void: _celebrating = false)
 
 
-func _teleport_to_checkpoint() -> void:
-	global_position = respawn_point + Vector3.UP * 0.05
-	reset_physics_interpolation()
+func _fly_step(time: float, arc: Dictionary) -> void:
+	global_position = _arc_point(arc, time)
+	_turn = move_toward(_turn, _turn_target, get_physics_process_delta_time() * 6.0)
+	model.rotation.y = -PI * _turn
 
 
-func _finish_respawn() -> void:
+func _make_arc(from: Vector3, to: Vector3, top: float) -> Dictionary:
+	var g := return_gravity
+	var t_up := sqrt(2.0 * (top - from.y) / g)
+	var t_down := sqrt(2.0 * (top - to.y) / g)
+	var duration := t_up + t_down
+	return {
+		"from": from,
+		"vx": (to.x - from.x) / duration,
+		"vy": g * t_up,
+		"duration": duration,
+	}
+
+
+func _arc_point(arc: Dictionary, time: float) -> Vector3:
+	var from: Vector3 = arc.from
+	return Vector3(
+		from.x + arc.vx * time,
+		from.y + arc.vy * time - 0.5 * return_gravity * time * time,
+		0.0)
+
+
+func _arc_clears(arc: Dictionary, ground: Dictionary) -> bool:
+	var duration: float = arc.duration
+	var steps := 30
+	for i in steps + 1:
+		var p := _arc_point(arc, duration * i / steps)
+		for x: float in ground:
+			if absf(x - p.x) < 0.35 and p.y < ground[x] + 0.05 and i > 0 and i < steps:
+				return false
+	return true
+
+
+## Высота опоры по пути (x -> y) — лучами сверху вниз, чтобы дуга возврата не прошла сквозь мебель.
+func _ground_profile(x1: float, x2: float) -> Dictionary:
+	var space := get_world_3d().direct_space_state
+	var profile := {}
+	var steps := maxi(2, int(absf(x2 - x1) / 0.25))
+	for i in steps + 1:
+		var x := lerpf(x1, x2, float(i) / steps)
+		var query := PhysicsRayQueryParameters3D.create(Vector3(x, 50.0, 0.0), Vector3(x, -50.0, 0.0))
+		query.exclude = [get_rid()]
+		var hit := space.intersect_ray(query)
+		if not hit.is_empty():
+			profile[x] = (hit.position as Vector3).y
+	return profile
+
+
+func _finish_return() -> void:
 	_controls_locked = false
 	respawned.emit()
 
