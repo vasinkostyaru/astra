@@ -104,6 +104,7 @@ func catch_on(surface_y: float, sink: float, sink_time: float) -> void:
 	velocity = Vector3.ZERO
 	_jump_buffer_left = 0.0
 	global_position.y = surface_y
+	_play(&"idle")
 	var tw := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tw.tween_property(self, "global_position:y", surface_y - sink, sink_time).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(_launch_return)
@@ -150,6 +151,9 @@ func celebrate() -> void:
 
 func _fly_step(time: float, arc: Dictionary) -> void:
 	global_position = _arc_point(arc, time)
+	# «jump» короткая и не зациклена — после вершины дуги переходим на зацикленное «fall»,
+	# иначе поза застывает на последнем кадре прыжка.
+	_play(&"jump" if arc.vy - return_gravity * time > 0.0 else &"fall")
 	_turn = move_toward(_turn, _turn_target, get_physics_process_delta_time() * 6.0)
 	model.rotation.y = -PI * _turn
 

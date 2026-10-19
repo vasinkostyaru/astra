@@ -4,6 +4,10 @@ extends Node
 const LEVELS: Array[String] = [
 	"res://levels/level_01_kids_room.tscn",
 ]
+const START_SCENE := "res://scenes/ui/start_screen.tscn"
+const ROOMS_SCENE := "res://scenes/ui/room_select.tscn"
+## Сколько комнат в доме всего (на экране выбора); построены пока только первые LEVELS.size().
+const ROOM_COUNT := 4
 const SAVE_PATH := "user://save.cfg"
 
 ## Пентатоника: каждая следующая ягодка звенит чуть выше.
@@ -45,9 +49,28 @@ func go_to_level(index: int) -> void:
 	get_tree().change_scene_to_file(LEVELS[index])
 
 
+## После уровня — следующий; если дальше комнат ещё нет, возвращаемся к выбору комнаты.
 func go_to_next_level() -> void:
-	# Пока следующих уровней нет — начинаем сначала.
-	go_to_level((current_level + 1) % LEVELS.size())
+	if current_level + 1 < LEVELS.size():
+		go_to_level(current_level + 1)
+	else:
+		go_to_rooms()
+
+
+func go_to_start() -> void:
+	get_tree().change_scene_to_file(START_SCENE)
+
+
+func go_to_rooms() -> void:
+	get_tree().change_scene_to_file(ROOMS_SCENE)
+
+
+func is_room_built(index: int) -> bool:
+	return index >= 0 and index < LEVELS.size()
+
+
+func is_room_completed(index: int) -> bool:
+	return completed_levels.has(index)
 
 
 ## Звон ягодки; step — порядковый номер собранной ягодки (с 1).

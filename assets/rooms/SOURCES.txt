@@ -1,0 +1,5 @@
+room_1_bathroom.png — "Free Bathroom Interior Backgrounds" by The Outlander, CC0
+  https://the-outlander.itch.io/free-bathroom-interior-backgrounds
+room_2_kitchen.png — "Free Kitchen Interior Backgrounds" by The Outlander, CC0
+  https://the-outlander.itch.io/free-kitchen-interior-backgrounds
+Обрезаны по центру до размера карточки (576x512) со скруглёнными углами. Название = индекс комнаты в room_card.gd.

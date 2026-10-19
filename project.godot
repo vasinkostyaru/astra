@@ -10,10 +10,10 @@ config_version=5
 
 [application]
 
-config/name="Август и искорки"
-run/main_scene="res://levels/level_01_kids_room.tscn"
+config/name="Август и ягодки"
+run/main_scene="res://scenes/ui/start_screen.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://assets/icon/icon.png"
 
 [autoload]
 
