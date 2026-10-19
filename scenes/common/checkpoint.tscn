@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/checkpoint.gd" id="1_cp"]
+
+[sub_resource type="BoxShape3D" id="Shape_trigger"]
+size = Vector3(1, 2, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_cushion"]
+size = Vector3(0.9, 0.08, 0.7)
+
+[sub_resource type="StandardMaterial3D" id="Mat_cushion"]
+resource_local_to_scene = true
+albedo_color = Color(0.95, 0.75, 0.85, 1)
+roughness = 1.0
+emission_enabled = true
+emission = Color(1, 0.75, 0.45, 1)
+emission_energy_multiplier = 0.0
+
+[node name="Checkpoint" type="Area3D"]
+monitorable = false
+script = ExtResource("1_cp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1, 0)
+shape = SubResource("Shape_trigger")
+
+[node name="Cushion" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.04, -0.6)
+mesh = SubResource("Mesh_cushion")
+surface_material_override/0 = SubResource("Mat_cushion")

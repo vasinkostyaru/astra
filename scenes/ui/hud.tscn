@@ -1,0 +1,54 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui/jar.gd" id="2_jar"]
+[ext_resource type="Script" path="res://scripts/ui/touch_controls.gd" id="3_tc"]
+[ext_resource type="Script" path="res://scripts/ui/touch_button.gd" id="4_tb"]
+
+[node name="HUD" type="CanvasLayer"]
+physics_interpolation_mode = 2
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Jar" type="Control" parent="Root"]
+layout_mode = 0
+mouse_filter = 2
+script = ExtResource("2_jar")
+
+[node name="TouchControls" type="Control" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_tc")
+
+[node name="Left" type="Control" parent="Root/TouchControls"]
+layout_mode = 0
+mouse_filter = 2
+script = ExtResource("4_tb")
+action = &"move_left"
+
+[node name="Right" type="Control" parent="Root/TouchControls"]
+layout_mode = 0
+mouse_filter = 2
+script = ExtResource("4_tb")
+action = &"move_right"
+icon = 1
+
+[node name="Jump" type="Control" parent="Root/TouchControls"]
+layout_mode = 0
+mouse_filter = 2
+script = ExtResource("4_tb")
+action = &"jump"
+icon = 2

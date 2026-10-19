@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/side_camera.gd" id="1_cam"]
+
+[node name="SideCamera" type="Camera3D"]
+rotation_degrees = Vector3(-6, 0, 0)
+current = true
+fov = 50.0
+script = ExtResource("1_cam")

@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/fall_zone.gd" id="1_fz"]
+
+[sub_resource type="BoxShape3D" id="Shape_zone"]
+size = Vector3(1, 1, 2)
+
+[node name="FallZone" type="Area3D"]
+monitorable = false
+script = ExtResource("1_fz")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape_zone")

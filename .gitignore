@@ -1,0 +1,23 @@
+# Godot 4: кэш импорта и служебные файлы редактора (пароли экспорта Godot 4 хранит здесь же, в export_credentials.cfg)
+.godot/
+
+# *.import НЕ игнорируем — в них настройки импорта ассетов.
+
+# Пресеты экспорта (могут содержать пути и пароли keystore)
+export_presets.cfg
+
+# Сборки и Android build template
+/android/
+/build/
+*.apk
+*.aab
+*.idsig
+
+# Ключи подписи
+*.keystore
+*.jks
+
+# Системный мусор
+.DS_Store
+*.tmp
+*~
