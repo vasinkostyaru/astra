@@ -19,12 +19,15 @@ extends Node3D
 ## Доля яркости светильников уровня в начале.
 @export_range(0.0, 1.0) var lights_dark_factor: float = 0.06
 @export var fall_limit_y: float = -6.0
+## Доля собранных искорок, к которой прожектор над Августом полностью гаснет.
+@export_range(0.05, 1.0) var spotlight_fade: float = 0.3
 
 var _required: int = 0
 var _collected: int = 0
 var _light: float = 0.0
 var _done: bool = false
 var _light_bases: Dictionary = {}  # Light3D -> исходная энергия
+var _spotlight_base: float = 0.0
 
 
 func _ready() -> void:
@@ -42,6 +45,8 @@ func _ready() -> void:
 		for child in level_lights.get_children():
 			if child is Light3D:
 				_light_bases[child] = (child as Light3D).light_energy
+	if player.spotlight:
+		_spotlight_base = player.spotlight.light_energy
 	_apply_light(0.0)
 	player.fall_limit_y = fall_limit_y
 
@@ -76,3 +81,8 @@ func _apply_light(t: float) -> void:
 	sun.light_energy = lerpf(sun_dark, sun_lit, k)
 	for light: Light3D in _light_bases:
 		light.light_energy = _light_bases[light] * lerpf(lights_dark_factor, 1.0, k)
+	if player.spotlight:
+		# Прожектор нужен только в самом начале: гаснет за первые несколько искорок.
+		var spot := clampf(1.0 - t / spotlight_fade, 0.0, 1.0)
+		player.spotlight.light_energy = _spotlight_base * spot
+		player.spotlight.visible = spot > 0.0

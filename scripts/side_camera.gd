@@ -3,7 +3,7 @@ extends Camera3D
 ## Камера сбоку: плавно следует за целью с опережением в сторону движения.
 
 @export var target: Node3D
-@export var offset: Vector3 = Vector3(0.0, 1.6, 9.0)
+@export var offset: Vector3 = Vector3(0.0, 1.3, 6.5)
 @export var look_ahead: float = 1.6
 @export var follow_speed: float = 4.0
 @export var look_ahead_speed: float = 1.5

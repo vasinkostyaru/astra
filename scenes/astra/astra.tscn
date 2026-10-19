@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/astra.gd" id="1_astra"]
+[ext_resource type="PackedScene" path="res://assets/models/astra/astra.glb" id="2_model"]
+
+[node name="Astra" type="Node3D"]
+script = ExtResource("1_astra")
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)
+
+[node name="AstraModel" parent="Model" instance=ExtResource("2_model")]

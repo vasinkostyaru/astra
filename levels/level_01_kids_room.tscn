@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/common/checkpoint.tscn" id="7_cp"]
 [ext_resource type="PackedScene" path="res://scenes/common/bounce_pillow.tscn" id="8_fz"]
 [ext_resource type="Script" path="res://scripts/main_lamp.gd" id="9_lamp"]
+[ext_resource type="PackedScene" path="res://scenes/astra/astra.tscn" id="10_astra"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -46,7 +47,7 @@ roughness = 1.0
 size = Vector3(44, 12, 0.5)
 
 [sub_resource type="StandardMaterial3D" id="Mat_wallpaper"]
-albedo_color = Color(0.86, 0.72, 0.55, 1)
+albedo_color = Color(0.50, 0.60, 0.72, 1)
 roughness = 0.95
 
 [sub_resource type="BoxShape3D" id="Shape_side_wall"]
@@ -417,11 +418,15 @@ position = Vector3(14.8, 3.5, 0)
 [node name="Spark9" parent="Sparks" instance=ExtResource("6_spark")]
 position = Vector3(18.9, 3, 0)
 
+[node name="Astra" parent="." instance=ExtResource("10_astra")]
+position = Vector3(19.3, 2.4, -0.3)
+rotation_degrees = Vector3(0, -90, 0)
+
 [node name="Player" parent="." instance=ExtResource("2_player")]
 
 [node name="SideCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("3_cam")]
 target = NodePath("../Player")
-limit_left = 3.0
-limit_right = 13.5
+limit_left = 1.5
+limit_right = 15.0
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]

@@ -52,3 +52,5 @@ mouse_filter = 2
 script = ExtResource("4_tb")
 action = &"jump"
 icon = 2
+vibrate_ms = 25
+vibrate_strength = 0.7

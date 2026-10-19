@@ -21,3 +21,7 @@ export_presets.cfg
 .DS_Store
 *.tmp
 *~
+
+# Python
+__pycache__/
+*.pyc

@@ -21,6 +21,8 @@ signal respawned
 @export var return_gravity: float = 14.0
 
 @onready var model: Node3D = $Model
+## Прожектор над Августом: виден в тёмной сцене, гаснет по мере того, как комната светлеет.
+@onready var spotlight: SpotLight3D = get_node_or_null("Spotlight")
 
 var respawn_point: Vector3
 
@@ -33,6 +35,7 @@ var _controls_locked: bool = false
 var _celebrating: bool = false
 var _model_scale: Vector3
 var _anim_player: AnimationPlayer
+var _stretch_tween: Tween
 var _current_anim: StringName = &""
 
 
@@ -66,6 +69,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = sqrt(2.0 * gravity * jump_height)
 		_jump_buffer_left = 0.0
 		_coyote_left = 0.0
+		_jump_stretch()
 
 	velocity.z = 0.0
 	move_and_slide()
@@ -206,6 +210,16 @@ func _finish_return() -> void:
 	respawned.emit()
 
 
+## Мгновенный отклик на прыжок: вытянулся вверх в первом же кадре и вернулся к обычной форме.
+func _jump_stretch() -> void:
+	if _stretch_tween:
+		_stretch_tween.kill()
+	model.scale = _model_scale * Vector3(0.85, 1.2, 0.85)
+	_stretch_tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_stretch_tween.tween_property(model, "scale", _model_scale, 0.25) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
 func _update_facing(dir: float, delta: float) -> void:
 	if dir > 0.01:
 		_turn_target = 0.0
@@ -229,6 +243,9 @@ func _update_animation() -> void:
 
 
 func _play(anim: StringName) -> void:
+	if _anim_player:
+		# Шаги быстрее, когда Август бежит быстрее — меньше «скольжения» ног.
+		_anim_player.speed_scale = lerpf(0.8, 2.0, absf(velocity.x) / move_speed) if anim == &"walk" else 1.0
 	if anim == _current_anim:
 		return
 	_current_anim = anim

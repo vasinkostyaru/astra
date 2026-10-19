@@ -26,6 +26,7 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
+window/frame_pacing/android/enable_frame_pacing=false
 
 [input]
 
@@ -52,12 +53,16 @@ jump={
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true
+buffering/agile_event_flushing=true
 
 [physics]
 
+common/physics_ticks_per_second=120
 common/physics_interpolation=true
 
 [rendering]
 
 renderer/rendering_method="mobile"
+rendering_device/vsync/frame_queue_size=1
+rendering_device/vsync/swapchain_image_count=2
 textures/vram_compression/import_etc2_astc=true
