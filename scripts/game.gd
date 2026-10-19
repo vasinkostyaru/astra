@@ -6,7 +6,7 @@ const LEVELS: Array[String] = [
 ]
 const SAVE_PATH := "user://save.cfg"
 
-## Пентатоника: каждая следующая искорка звенит чуть выше.
+## Пентатоника: каждая следующая ягодка звенит чуть выше.
 const CHIME_NOTES: Array[float] = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0]
 const CHIME_BASE := 523.25
 const VOICES := 4
@@ -50,7 +50,7 @@ func go_to_next_level() -> void:
 	go_to_level((current_level + 1) % LEVELS.size())
 
 
-## Звон искорки; step — порядковый номер собранной искорки (с 1).
+## Звон ягодки; step — порядковый номер собранной ягодки (с 1).
 func play_chime(step: int) -> void:
 	var note := CHIME_NOTES[posmod(step - 1, CHIME_NOTES.size())]
 	_play_note(note)

@@ -14,7 +14,6 @@ func _run() -> void:
 	await _shot("astra_running")
 	Input.action_release(&"move_right")
 	var p: Node3D = level.get_node("Player")
-	level._apply_light(1.0)
 	p.global_position = Vector3(16.0, 2.4, 0); p.reset_physics_interpolation()
 	for i in 200: await physics_frame
 	var cam = level.get_node("SideCamera")

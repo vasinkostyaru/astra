@@ -5,18 +5,19 @@
 [ext_resource type="PackedScene" path="res://scenes/common/side_camera.tscn" id="3_cam"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/common/brick_block.tscn" id="5_bricks"]
-[ext_resource type="PackedScene" path="res://scenes/common/spark.tscn" id="6_spark"]
+[ext_resource type="PackedScene" path="res://scenes/common/berry.tscn" id="6_berry"]
 [ext_resource type="PackedScene" path="res://scenes/common/checkpoint.tscn" id="7_cp"]
 [ext_resource type="PackedScene" path="res://scenes/common/bounce_pillow.tscn" id="8_fz"]
 [ext_resource type="Script" path="res://scripts/main_lamp.gd" id="9_lamp"]
 [ext_resource type="PackedScene" path="res://scenes/astra/astra.tscn" id="10_astra"]
+[ext_resource type="PackedScene" path="res://scenes/common/brick_pile.tscn" id="11_pile"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
 background_color = Color(0.07, 0.045, 0.035, 1)
 ambient_light_source = 2
 ambient_light_color = Color(1, 0.78, 0.55, 1)
-ambient_light_energy = 0.02
+ambient_light_energy = 0.45
 tonemap_mode = 2
 glow_enabled = true
 glow_intensity = 0.9
@@ -150,13 +151,10 @@ rings = 4
 [sub_resource type="Gradient" id="Grad_confetti"]
 colors = PackedColorArray(1, 0.95, 0.6, 1, 1, 0.55, 0.3, 1)
 
-[node name="Level01KidsRoom" type="Node3D" node_paths=PackedStringArray("player", "hud", "world_environment", "sun", "level_lights", "main_lamp", "astra")]
+[node name="Level01KidsRoom" type="Node3D" node_paths=PackedStringArray("player", "hud", "main_lamp", "astra")]
 script = ExtResource("1_level")
 player = NodePath("Player")
 hud = NodePath("HUD")
-world_environment = NodePath("WorldEnvironment")
-sun = NodePath("Sun")
-level_lights = NodePath("LevelLights")
 main_lamp = NodePath("NightLamp")
 astra = NodePath("Astra")
 
@@ -166,7 +164,7 @@ environment = SubResource("Env")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -30, 0)
 light_color = Color(1, 0.85, 0.65, 1)
-light_energy = 0.0
+light_energy = 0.5
 shadow_enabled = true
 
 [node name="LevelLights" type="Node3D" parent="."]
@@ -174,19 +172,19 @@ shadow_enabled = true
 [node name="Glow1" type="OmniLight3D" parent="LevelLights"]
 position = Vector3(1, 4, 2.5)
 light_color = Color(1, 0.75, 0.45, 1)
-light_energy = 1.5
+light_energy = 0.6
 omni_range = 8.0
 
 [node name="Glow2" type="OmniLight3D" parent="LevelLights"]
 position = Vector3(8.5, 4.5, 2.5)
 light_color = Color(1, 0.75, 0.45, 1)
-light_energy = 1.5
+light_energy = 0.6
 omni_range = 8.0
 
 [node name="Glow3" type="OmniLight3D" parent="LevelLights"]
 position = Vector3(15, 5, 2.5)
 light_color = Color(1, 0.75, 0.45, 1)
-light_energy = 1.5
+light_energy = 0.6
 omni_range = 8.0
 
 [node name="Room" type="Node3D" parent="."]
@@ -257,23 +255,10 @@ rows = 3
 depth = 0.6
 color_seed = 7
 
-[node name="Step1" parent="Bricks" instance=ExtResource("5_bricks")]
-position = Vector3(4.2, 0, 0)
-columns = 2
-rows = 2
+[node name="BrickPile" parent="Bricks" instance=ExtResource("11_pile")]
+position = Vector3(2, 0, 0)
+stairs_origin = Vector3(2.2, 0, 0)
 color_seed = 1
-
-[node name="Step2" parent="Bricks" instance=ExtResource("5_bricks")]
-position = Vector3(5.4, 0, 0)
-columns = 2
-rows = 4
-color_seed = 2
-
-[node name="Step3" parent="Bricks" instance=ExtResource("5_bricks")]
-position = Vector3(6.6, 0, 0)
-columns = 2
-rows = 6
-color_seed = 4
 
 [node name="Tower" parent="Bricks" instance=ExtResource("5_bricks")]
 position = Vector3(9, 0, 0)
@@ -390,33 +375,42 @@ position = Vector3(7.2, 1.8, 0)
 [node name="Bed" parent="Checkpoints" instance=ExtResource("7_cp")]
 position = Vector3(16.1, 2.4, 0)
 
-[node name="Sparks" type="Node3D" parent="."]
+[node name="Berries" type="Node3D" parent="."]
 
-[node name="Spark1" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry1" parent="Berries" instance=ExtResource("6_berry")]
+kind = 0
 position = Vector3(2, 0.6, 0)
 
-[node name="Spark2" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry2" parent="Berries" instance=ExtResource("6_berry")]
+kind = 1
 position = Vector3(4.8, 1.2, 0)
 
-[node name="Spark3" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry3" parent="Berries" instance=ExtResource("6_berry")]
+kind = 2
 position = Vector3(6, 1.8, 0)
 
-[node name="Spark4" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry4" parent="Berries" instance=ExtResource("6_berry")]
+kind = 3
 position = Vector3(7.2, 2.4, 0)
 
-[node name="Spark5" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry5" parent="Berries" instance=ExtResource("6_berry")]
+kind = 4
 position = Vector3(8.4, 2.9, 0)
 
-[node name="Spark6" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry6" parent="Berries" instance=ExtResource("6_berry")]
+kind = 0
 position = Vector3(9.9, 2.4, 0)
 
-[node name="Spark7" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry7" parent="Berries" instance=ExtResource("6_berry")]
+kind = 1
 position = Vector3(12.4, 3, 0)
 
-[node name="Spark8" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry8" parent="Berries" instance=ExtResource("6_berry")]
+kind = 2
 position = Vector3(14.8, 3.5, 0)
 
-[node name="Spark9" parent="Sparks" instance=ExtResource("6_spark")]
+[node name="Berry9" parent="Berries" instance=ExtResource("6_berry")]
+kind = 3
 position = Vector3(18.9, 3, 0)
 
 [node name="AstraPath" type="Node3D" parent="."]

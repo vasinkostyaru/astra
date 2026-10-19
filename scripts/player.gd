@@ -141,9 +141,10 @@ func celebrate() -> void:
 	_celebrating = true
 	_play(&"happy")
 	var tw := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	for i in 3:
-		tw.tween_property(model, "position:y", 0.35, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		tw.tween_property(model, "position:y", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	# Четыре прыжка по 0.5 с — ровно два цикла анимации happy (1 с).
+	for i in 4:
+		tw.tween_property(model, "position:y", 0.3, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_property(model, "position:y", 0.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tw.tween_callback(func() -> void: _celebrating = false)
 
 
@@ -220,7 +221,9 @@ func _update_facing(dir: float, delta: float) -> void:
 		_turn_target = 0.0
 	elif dir < -0.01:
 		_turn_target = 1.0
-	_turn = move_toward(_turn, _turn_target, delta * 6.0)
+	# Радуется лицом к экрану (0.5 — посередине между «вправо» и «влево»), потом возвращается к прежнему взгляду.
+	var target := 0.5 if _celebrating else _turn_target
+	_turn = move_toward(_turn, target, delta * 6.0)
 	model.rotation.y = -PI * _turn
 
 

@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/berry.gd" id="1_berry"]
+
+[sub_resource type="SphereShape3D" id="Shape_pickup"]
+radius = 0.45
+
+[node name="Berry" type="Area3D" groups=["berries"]]
+monitorable = false
+script = ExtResource("1_berry")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape_pickup")
+
+[node name="Visual" type="Node3D" parent="."]
+
