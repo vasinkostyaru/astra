@@ -8,8 +8,10 @@ const PAPER: Array[Color] = [
 
 ## Картинки комнат (CC0, см. assets/rooms/SOURCES.txt); если файла нет — рисуем значок в коде.
 const PICTURES: Dictionary = {
+	0: "res://assets/rooms/room_0_kids_room.png",
 	1: "res://assets/rooms/room_1_bathroom.png",
 	2: "res://assets/rooms/room_2_kitchen.png",
+	3: "res://assets/rooms/room_3_living_room.png",
 }
 
 @export var room: int = 0

@@ -3,3 +3,4 @@ room_1_bathroom.png — "Free Bathroom Interior Backgrounds" by The Outlander, C
 room_2_kitchen.png — "Free Kitchen Interior Backgrounds" by The Outlander, CC0
   https://the-outlander.itch.io/free-kitchen-interior-backgrounds
 Обрезаны по центру до размера карточки (576x512) со скруглёнными углами. Название = индекс комнаты в room_card.gd.
+room_0_kids_room.png, room_3_living_room.png — две половины картинки, присланной пользователем (октябрь 2026); верх — детская, низ — гостиная.
