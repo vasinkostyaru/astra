@@ -18,6 +18,7 @@ config/icon="res://assets/icon/icon.png"
 [autoload]
 
 Game="*res://scripts/game.gd"
+Cutscenes="*res://cutscenes/cutscene_player.gd"
 
 [display]
 
