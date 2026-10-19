@@ -47,6 +47,8 @@ func _build_visual() -> void:
 	match kind:
 		Kind.STRAWBERRY:
 			_ball(Vector3.ZERO, 0.16, color, Vector3(1, 1.2, 1))
+			for sp: Vector3 in [Vector3(0.1, 0.05, 0.12), Vector3(-0.1, 0.05, 0.12), Vector3(0.0, -0.08, 0.15), Vector3(0.0, 0.13, 0.1), Vector3(0.12, -0.06, 0.08), Vector3(-0.12, -0.06, 0.08)]:
+				_ball(sp, 0.018, Color(1.0, 0.9, 0.5))
 			_leaf(Vector3(0, 0.2, 0))
 		Kind.BLUEBERRY:
 			_ball(Vector3.ZERO, 0.16, color)
@@ -66,6 +68,25 @@ func _build_visual() -> void:
 			_leaf(Vector3(0, 0.2, 0))
 
 
+## Кожица ягодки: матовая, с лёгкой «пятнистостью», без пластикового блика.
+static var _skin: NoiseTexture2D
+
+
+static func _get_skin() -> NoiseTexture2D:
+	if _skin == null:
+		var noise := FastNoiseLite.new()
+		noise.frequency = 0.09
+		_skin = NoiseTexture2D.new()
+		_skin.width = 64
+		_skin.height = 64
+		_skin.noise = noise
+		var grad := Gradient.new()
+		grad.set_color(0, Color(0.72, 0.72, 0.72))
+		grad.set_color(1, Color(1.0, 1.0, 1.0))
+		_skin.color_ramp = grad
+	return _skin
+
+
 func _ball(pos: Vector3, radius: float, color: Color, stretch: Vector3 = Vector3.ONE) -> void:
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
@@ -73,12 +94,14 @@ func _ball(pos: Vector3, radius: float, color: Color, stretch: Vector3 = Vector3
 	mesh.radial_segments = 16
 	mesh.rings = 8
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.35
-	# Чуть собственного свечения, чтобы ягодки хорошо читались на фоне.
+	# Каждая бусинка чуть своего оттенка — как у настоящей ягоды.
+	mat.albedo_color = color.lightened(randf_range(-0.08, 0.1))
+	mat.albedo_texture = _get_skin()
+	mat.roughness = 0.9
+	mat.metallic_specular = 0.12
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 0.25
+	mat.emission_energy_multiplier = 0.12
 	mesh.material = mat
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh

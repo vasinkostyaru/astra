@@ -10,9 +10,13 @@ const MARGIN := 0.04
 
 var _glow_texture: GradientTexture2D
 var _fade: ColorRect
+var _exit: ExitButton
 
 
 func _ready() -> void:
+	_exit = ExitButton.new()
+	_root.add_child(_exit)
+	_exit.held.connect(_on_exit_held)
 	_root.resized.connect(_layout)
 	_layout()
 	# Шторка для мягкого появления и ухода со сцены; поверх всего, касания не перехватывает.
@@ -39,6 +43,14 @@ func _layout() -> void:
 	var jh := h * JAR_HEIGHT
 	jar.size = Vector2(jh * 0.72, jh)
 	jar.position = Vector2(_root.size.x - h * MARGIN - jar.size.x, h * MARGIN)
+	var eh := h * 0.11
+	_exit.size = Vector2(eh, eh)
+	_exit.position = Vector2(h * MARGIN, h * MARGIN)
+
+
+func _on_exit_held() -> void:
+	await fade_out(0.5)
+	Game.go_to_rooms()
 
 
 ## Плавно затемняет экран; ждать окончания — `await hud.fade_out()`.

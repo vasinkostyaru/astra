@@ -19,6 +19,8 @@ signal reached_by_player
 @export var exit_distance: float = 0.9
 @export var run_speed: float = 4.5
 @export var hop_height: float = 0.45
+## Финал: у выхода Астра сворачивается клубком и спит (анимация sleep) вместо того, чтобы просто стоять.
+@export var sleeps_at_exit: bool = false
 
 @onready var model: Node3D = $Model
 
@@ -59,14 +61,78 @@ func _physics_process(delta: float) -> void:
 	var waiting_at := _points[_index]
 	if _is_exit(waiting_at):
 		_turn_target = signf(player.global_position.x - global_position.x)
-		if player.global_position.distance_to(global_position) < exit_distance:
+		# Засчитываем, если Август рядом по горизонтали и не выше прыжка (перепрыгнул — тоже нашёл).
+		var gap := player.global_position - global_position
+		if absf(gap.x) < exit_distance and absf(gap.y) < 1.8:
 			_done = true
-			play(&"idle")
+			play(&"sleep" if sleeps_at_exit else &"idle")
+			_purr_with_hearts()
 			reached_by_player.emit()
 		return
 	_turn_target = -1.0
 	if player.global_position.x > global_position.x - trigger_distance:
 		_run_to_next_stop()
+
+
+## Астра мурчит, над ней поднимаются сердечки.
+func _purr_with_hearts() -> void:
+	Game.play_purr()
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(0.3, 0.3)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_texture = _heart_texture()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.billboard_keep_scale = true
+	mesh.material = mat
+	var hearts := CPUParticles3D.new()
+	hearts.mesh = mesh
+	hearts.amount = 14
+	hearts.lifetime = 1.6
+	hearts.one_shot = false
+	hearts.explosiveness = 0.0
+	hearts.direction = Vector3(0, 1, 0)
+	hearts.spread = 25.0
+	hearts.gravity = Vector3(0, 0.3, 0)
+	hearts.initial_velocity_min = 0.8
+	hearts.initial_velocity_max = 1.4
+	hearts.scale_amount_min = 0.7
+	hearts.scale_amount_max = 1.3
+	hearts.position = Vector3(0, 0.8, 0.2)
+	add_child(hearts)
+	hearts.emitting = true
+	# Твин привязан к Астре и пропадает вместе с ней при смене сцены.
+	var tw := create_tween()
+	tw.tween_interval(3.0)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(hearts):
+			hearts.emitting = false)
+
+
+## Картинка сердечка, нарисованная в коде по формуле (розовое, с бликом).
+static var _heart: ImageTexture
+
+
+static func _heart_texture() -> ImageTexture:
+	if _heart == null:
+		var size := 64
+		var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+		for py in size:
+			for px in size:
+				var x := (px + 0.5) / size * 3.0 - 1.5
+				var y := 1.4 - (py + 0.5) / size * 3.0
+				var v := pow(x * x + y * y - 1.0, 3.0) - x * x * y * y * y
+				if v <= 0.0:
+					var shade := clampf(0.5 + 0.5 * (y - 0.2), 0.0, 1.0)
+					var col := Color(0.95, 0.25, 0.4).lerp(Color(1.0, 0.55, 0.65), shade * 0.6)
+					if (x + 0.55) * (x + 0.55) + (y - 0.6) * (y - 0.6) < 0.05:
+						col = Color(1.0, 0.85, 0.9)
+					img.set_pixel(px, py, col)
+				else:
+					img.set_pixel(px, py, Color(0, 0, 0, 0))
+		_heart = ImageTexture.create_from_image(img)
+	return _heart
 
 
 func _run_to_next_stop() -> void:
@@ -99,7 +165,7 @@ func _leg_step(t: float, from: Vector3, to: Vector3, arc: float) -> void:
 func _arrive() -> void:
 	_moving = false
 	_turn_target = -1.0
-	play(&"idle")
+	play(&"sleep" if sleeps_at_exit and _is_exit(_points[_index]) else &"idle")
 
 
 func _is_stop(marker: Marker3D) -> bool:

@@ -15,13 +15,14 @@ const PAUSE := 2.5        # пауза между пробежками, с
 @onready var _astra: Node3D = $Astra
 
 var _play: PictureButton
+var _starting: bool = false
 
 
 func _ready() -> void:
 	build_ui()
 	_play = PictureButton.new()
 	_play.breathe = true
-	_play.pressed.connect(func() -> void: leave(Game.go_to_rooms))
+	_play.pressed.connect(_on_play)
 	ui.add_child(_play)
 	ui.get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -30,6 +31,17 @@ func _ready() -> void:
 	_avgust.hide()
 	_astra.hide()
 	_run_loop.call_deferred()
+
+
+func _on_play() -> void:
+	if _starting:
+		return
+	_starting = true
+	# Ролик-заставка показывается один раз за запуск; касание его пропускает.
+	if not Cutscenes.was_played(&"intro"):
+		Cutscenes.play(&"intro")
+		await Cutscenes.finished
+	leave(Game.go_to_rooms)
 
 
 func _layout() -> void:

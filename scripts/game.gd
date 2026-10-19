@@ -3,6 +3,9 @@ extends Node
 
 const LEVELS: Array[String] = [
 	"res://levels/level_01_kids_room.tscn",
+	"res://levels/level_02_bathroom.tscn",
+	"res://levels/level_03_kitchen.tscn",
+	"res://levels/level_04_living_room.tscn",
 ]
 const START_SCENE := "res://scenes/ui/start_screen.tscn"
 const ROOMS_SCENE := "res://scenes/ui/room_select.tscn"
@@ -20,6 +23,11 @@ var completed_levels: Array[int] = []
 
 var _chime: AudioStreamWAV
 var _boing: AudioStreamWAV
+var _thud: AudioStreamWAV
+var _purr: AudioStreamWAV
+var _splash: AudioStreamWAV
+var _pop: AudioStreamWAV
+var _gurgle: AudioStreamWAV
 var _voices: Array[AudioStreamPlayer] = []
 var _next_voice: int = 0
 
@@ -28,6 +36,11 @@ func _ready() -> void:
 	_load_progress()
 	_chime = _make_chime(CHIME_BASE)
 	_boing = _make_boing()
+	_thud = _make_thud()
+	_purr = _make_purr()
+	_splash = _make_splash()
+	_pop = _make_pop()
+	_gurgle = _make_gurgle()
 	for i in VOICES:
 		var p := AudioStreamPlayer.new()
 		p.stream = _chime
@@ -95,6 +108,44 @@ func play_boing() -> void:
 	p.play()
 
 
+## Нота клавиши пианино-коврика (частота в герцах).
+func play_note(freq: float) -> void:
+	_play_note(freq)
+
+
+## Глухой «бух» рассыпавшейся пирамиды.
+func play_thud() -> void:
+	_play_sample(_thud, 1.0)
+
+
+## Всплеск воды.
+func play_splash() -> void:
+	_play_sample(_splash, 1.0)
+
+
+## Вода уходит в слив: бульканье со скольжением тона вниз.
+func play_gurgle() -> void:
+	_play_sample(_gurgle, 1.0)
+
+
+## Лопнул мыльный пузырь (тон чуть разный — пузыри не звучат одинаково).
+func play_pop() -> void:
+	_play_sample(_pop, randf_range(0.85, 1.25))
+
+
+## Мурчание Астры.
+func play_purr() -> void:
+	_play_sample(_purr, 1.0)
+
+
+func _play_sample(stream: AudioStreamWAV, pitch: float) -> void:
+	var p := _voices[_next_voice]
+	_next_voice = (_next_voice + 1) % _voices.size()
+	p.stream = stream
+	p.pitch_scale = pitch
+	p.play()
+
+
 func _play_note(freq: float) -> void:
 	var p := _voices[_next_voice]
 	_next_voice = (_next_voice + 1) % _voices.size()
@@ -141,6 +192,98 @@ func _make_boing() -> AudioStreamWAV:
 		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.08)
 		var puff := noise * exp(-t * 25.0) * 1.5
 		data.encode_s16(i * 2, int(clampf((tone + puff) * 0.3, -1.0, 1.0) * 32767.0))
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = rate
+	wav.stereo = false
+	wav.data = data
+	return wav
+
+
+## «Бух»: низкий затухающий тон и шорох.
+func _make_thud() -> AudioStreamWAV:
+	var rate := 22050
+	var count := int(rate * 0.45)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var phase := 0.0
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / rate
+		phase += TAU * lerpf(110.0, 55.0, minf(t * 4.0, 1.0)) / rate
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.25)
+		var s := sin(phase) * exp(-t * 9.0) + noise * exp(-t * 18.0) * 0.6
+		data.encode_s16(i * 2, int(clampf(s * 0.5, -1.0, 1.0) * 32767.0))
+	return _wav(data, rate)
+
+
+## Мурчание: низкий тон с быстрой дрожью громкости.
+func _make_purr() -> AudioStreamWAV:
+	var rate := 22050
+	var count := int(rate * 1.6)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / rate
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.06)
+		var rumble := 0.5 + 0.5 * sin(TAU * 24.0 * t)
+		var env := minf(t / 0.2, 1.0) * minf((1.6 - t) / 0.4, 1.0)
+		var s := (sin(TAU * 62.0 * t) * 0.5 + noise * 0.8) * rumble * env
+		data.encode_s16(i * 2, int(clampf(s * 0.45, -1.0, 1.0) * 32767.0))
+	return _wav(data, rate)
+
+
+## Всплеск: плавный шум с быстрым спадом.
+func _make_splash() -> AudioStreamWAV:
+	var rate := 22050
+	var count := int(rate * 0.7)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / rate
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.35 - 0.25 * minf(t * 2.0, 1.0))
+		var s := noise * minf(t / 0.02, 1.0) * exp(-t * 5.5)
+		data.encode_s16(i * 2, int(clampf(s * 0.8, -1.0, 1.0) * 32767.0))
+	return _wav(data, rate)
+
+
+## Пузырь: короткий высокий «пик» со скольжением вниз.
+func _make_pop() -> AudioStreamWAV:
+	var rate := 22050
+	var count := int(rate * 0.18)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var phase := 0.0
+	for i in count:
+		var t := float(i) / rate
+		phase += TAU * lerpf(1400.0, 500.0, minf(t * 8.0, 1.0)) / rate
+		var s := sin(phase) * exp(-t * 28.0)
+		data.encode_s16(i * 2, int(clampf(s * 0.5, -1.0, 1.0) * 32767.0))
+	return _wav(data, rate)
+
+
+func _make_gurgle() -> AudioStreamWAV:
+	var rate := 22050
+	var count := int(rate * 2.2)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var phase := 0.0
+	var noise := 0.0
+	for i in count:
+		var t := float(i) / rate
+		var freq := lerpf(330.0, 120.0, t / 2.2) + sin(t * 31.0) * 60.0
+		phase += TAU * freq / rate
+		noise = lerpf(noise, randf_range(-1.0, 1.0), 0.2)
+		var wob := 0.5 + 0.5 * sin(t * 24.0)
+		var env := minf(t / 0.1, 1.0) * minf((2.2 - t) / 0.5, 1.0)
+		var s := (sin(phase) * 0.45 + noise * 0.35) * wob * env
+		data.encode_s16(i * 2, int(clampf(s * 0.7, -1.0, 1.0) * 32767.0))
+	return _wav(data, rate)
+
+
+func _wav(data: PackedByteArray, rate: int) -> AudioStreamWAV:
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
 	wav.mix_rate = rate

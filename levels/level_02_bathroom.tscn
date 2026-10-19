@@ -1,0 +1,237 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/common/side_camera.tscn" id="3_cam"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" path="res://scenes/common/brick_block.tscn" id="5_bricks"]
+[ext_resource type="PackedScene" path="res://scenes/common/berry.tscn" id="6_berry"]
+[ext_resource type="PackedScene" path="res://scenes/common/checkpoint.tscn" id="7_cp"]
+[ext_resource type="PackedScene" path="res://scenes/common/bounce_pillow.tscn" id="8_fz"]
+[ext_resource type="Script" path="res://scripts/mirror_lights.gd" id="9_lamp"]
+[ext_resource type="PackedScene" path="res://scenes/astra/astra.tscn" id="10_astra"]
+[ext_resource type="PackedScene" path="res://scenes/common/brick_pile.tscn" id="11_pile"]
+
+[ext_resource type="Script" path="res://sections/bathroom/assembler.gd" id="12_asm"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.07, 0.045, 0.035, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 0.88, 0.8, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.9
+glow_bloom = 0.05
+fog_enabled = true
+fog_light_color = Color(0.35, 0.24, 0.16, 1)
+fog_density = 0.012
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(44, 4, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+size = Vector3(44, 4, 8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood_floor"]
+albedo_color = Color(0.46, 0.3, 0.18, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="Mesh_carpet"]
+size = Vector3(14, 0.04, 4)
+
+[sub_resource type="StandardMaterial3D" id="Mat_carpet"]
+albedo_color = Color(0.22, 0.55, 0.58, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="Mesh_back_wall"]
+size = Vector3(44, 12, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wallpaper"]
+albedo_color = Color(0.50, 0.60, 0.72, 1)
+roughness = 0.95
+
+[sub_resource type="BoxShape3D" id="Shape_side_wall"]
+size = Vector3(1, 12, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_side_wall"]
+size = Vector3(1, 12, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_window"]
+size = Vector3(3, 3.4, 0.06)
+
+[sub_resource type="StandardMaterial3D" id="Mat_night_sky"]
+albedo_color = Color(0.08, 0.1, 0.25, 1)
+
+[sub_resource type="SphereMesh" id="Mesh_moon"]
+radius = 0.45
+height = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_moon"]
+shading_mode = 0
+albedo_color = Color(1, 0.95, 0.75, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_bed"]
+size = Vector3(6, 2.4, 2.4)
+
+[sub_resource type="BoxMesh" id="Mesh_bed_frame"]
+size = Vector3(6.2, 1.6, 2.6)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood_bed"]
+albedo_color = Color(0.62, 0.4, 0.23, 1)
+roughness = 0.6
+
+[sub_resource type="BoxMesh" id="Mesh_mattress"]
+size = Vector3(6, 0.8, 2.4)
+
+[sub_resource type="StandardMaterial3D" id="Mat_linen"]
+albedo_color = Color(0.95, 0.93, 0.88, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="Mesh_blanket_top"]
+size = Vector3(4.2, 0.04, 2.5)
+
+[sub_resource type="BoxMesh" id="Mesh_blanket_side"]
+size = Vector3(4.2, 1, 0.04)
+
+[sub_resource type="StandardMaterial3D" id="Mat_blanket"]
+albedo_color = Color(0.95, 0.5, 0.4, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="Mesh_bed_pillow"]
+size = Vector3(1.4, 0.35, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_nightstand"]
+size = Vector3(2.4, 2.4, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_nightstand"]
+size = Vector3(2.4, 2.4, 2)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood_light"]
+albedo_color = Color(0.78, 0.58, 0.38, 1)
+roughness = 0.6
+
+[sub_resource type="SphereMesh" id="Mesh_knob"]
+radius = 0.1
+height = 0.2
+
+[sub_resource type="CylinderMesh" id="Mesh_lamp_base"]
+top_radius = 0.22
+bottom_radius = 0.28
+height = 0.24
+
+[sub_resource type="CylinderMesh" id="Mesh_lamp_stem"]
+top_radius = 0.05
+bottom_radius = 0.05
+height = 0.4
+
+[sub_resource type="SphereMesh" id="Mesh_lamp_shade"]
+radius = 0.4
+height = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_lamp_glow"]
+resource_local_to_scene = true
+albedo_color = Color(1, 0.92, 0.75, 1)
+emission_enabled = true
+emission = Color(1, 0.75, 0.4, 1)
+emission_energy_multiplier = 0.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_confetti"]
+shading_mode = 0
+albedo_color = Color(1, 0.85, 0.4, 1)
+vertex_color_use_as_albedo = true
+
+[sub_resource type="SphereMesh" id="Mesh_confetti"]
+material = SubResource("Mat_confetti")
+radius = 0.06
+height = 0.12
+radial_segments = 8
+rings = 4
+
+[sub_resource type="Gradient" id="Grad_confetti"]
+colors = PackedColorArray(1, 0.95, 0.6, 1, 1, 0.55, 0.3, 1)
+
+[node name="Level02Bathroom" type="Node3D" node_paths=PackedStringArray("player", "hud", "main_lamp", "astra")]
+script = ExtResource("1_level")
+player = NodePath("Player")
+hud = NodePath("HUD")
+main_lamp = NodePath("MirrorLights")
+needed_share = 0.8
+astra = NodePath("Astra")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -30, 0)
+light_color = Color(1, 0.85, 0.65, 1)
+light_energy = 0.5
+shadow_enabled = true
+directional_shadow_mode = 0
+directional_shadow_max_distance = 18.0
+
+[node name="Room" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Room"]
+position = Vector3(9.5, -2, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="Mesh" type="MeshInstance3D" parent="Room/Floor"]
+mesh = SubResource("Mesh_floor")
+surface_material_override/0 = SubResource("Mat_wood_floor")
+
+[node name="BackWall" type="MeshInstance3D" parent="Room"]
+position = Vector3(9.5, 6, -3.25)
+mesh = SubResource("Mesh_back_wall")
+surface_material_override/0 = SubResource("Mat_wallpaper")
+
+[node name="LeftWall" type="StaticBody3D" parent="Room"]
+position = Vector3(-4.5, 6, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/LeftWall"]
+shape = SubResource("Shape_side_wall")
+
+[node name="Mesh" type="MeshInstance3D" parent="Room/LeftWall"]
+mesh = SubResource("Mesh_side_wall")
+surface_material_override/0 = SubResource("Mat_wallpaper")
+
+[node name="RightWall" type="StaticBody3D" parent="Room"]
+position = Vector3(21.1, 6, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/RightWall"]
+shape = SubResource("Shape_side_wall")
+
+[node name="Mesh" type="MeshInstance3D" parent="Room/RightWall"]
+mesh = SubResource("Mesh_side_wall")
+surface_material_override/0 = SubResource("Mat_wallpaper")
+
+[node name="MirrorLights" type="Node3D" parent="."]
+script = ExtResource("9_lamp")
+
+[node name="AstraPath" type="Node3D" parent="."]
+
+[node name="Assembler" type="Node3D" parent="." node_paths=PackedStringArray("astra_path", "main_lamp", "camera", "room")]
+script = ExtResource("12_asm")
+mids_before_feature = 5
+mids_after_feature = 5
+astra_path = NodePath("../AstraPath")
+main_lamp = NodePath("../MirrorLights")
+camera = NodePath("../SideCamera")
+room = NodePath("../Room")
+
+[node name="Astra" parent="." node_paths=PackedStringArray("path", "player") instance=ExtResource("10_astra")]
+path = NodePath("../AstraPath")
+player = NodePath("../Player")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="SideCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("3_cam")]
+target = NodePath("../Player")
+limit_left = 1.5
+limit_right = 16.0
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

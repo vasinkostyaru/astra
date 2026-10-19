@@ -3,9 +3,11 @@ extends Cutscene
 ## Астра оглядывается, убегает в дверь, камера едет за ней; дверь открывается,
 ## из проёма льётся свет следующей комнаты, затемнение.
 ##
-## Комната задаётся параметром: Cutscenes.play(&"transition", {"room": &"bathroom"}).
+## Комната задаётся параметром: Cutscenes.play(&"transition", {"room": &"bathroom"}) — это КУДА идём.
+## Декорации показывают комнату, ИЗ которой уходят (SOURCE), так же, как она выглядит в игре
+## (детская — обои со звёздами, ванная — коралловая плитка, кухня — тёмная фисташка и угольные шкафчики,
+## гостиная — бело-голубые обои с птичками); за дверью — свет и цвет следующей комнаты (ROOMS).
 ## При самостоятельном запуске берётся default_room (меняется в инспекторе).
-## Палитра — здесь, в ROOMS; тайминги и позиции — экспорт ниже и константы.
 
 const DOOR_LEFT := 2.9
 const DOOR_RIGHT := 4.0
@@ -18,24 +20,28 @@ const FLOOR_Y := 0.012
 const AVGUST_HOME := Vector3(-0.7, FLOOR_Y, 0.7)
 const ASTRA_HOME := Vector3(0.8, FLOOR_Y, 0.7)
 
-## Палитра комнат: пол, стена, акцент (дверь/мебель), свет из проёма.
+## Что за дверью (следующая комната): цвет стены в проёме и тёплый свет.
 const ROOMS: Dictionary = {
-	"kids": {
-		"floor": Color(0.62, 0.42, 0.26), "wall": Color(0.93, 0.85, 0.72),
-		"accent": Color(0.83, 0.3, 0.28), "glow": Color(1.0, 0.86, 0.6),
-	},
-	"bathroom": {
-		"floor": Color(0.36, 0.42, 0.46), "wall": Color(0.86, 0.55, 0.52),
-		"accent": Color(0.96, 0.96, 0.95), "glow": Color(0.82, 0.94, 1.0),
-	},
-	"kitchen": {
-		"floor": Color(0.55, 0.42, 0.32), "wall": Color(0.9, 0.86, 0.78),
-		"accent": Color(0.72, 0.5, 0.3), "glow": Color(1.0, 0.9, 0.62),
-	},
-	"living": {
-		"floor": Color(0.5, 0.35, 0.24), "wall": Color(0.78, 0.72, 0.62),
-		"accent": Color(0.35, 0.5, 0.45), "glow": Color(1.0, 0.78, 0.45),
-	},
+	"kids": {"beyond": Color(0.78, 0.88, 0.98), "glow": Color(1.0, 0.86, 0.6)},
+	"bathroom": {"beyond": Color(0.95, 0.5, 0.45), "glow": Color(1.0, 0.9, 0.85)},
+	"kitchen": {"beyond": Color(0.4, 0.5, 0.3), "glow": Color(1.0, 0.9, 0.62)},
+	"living": {"beyond": Color(0.88, 0.93, 0.98), "glow": Color(1.0, 0.78, 0.45)},
+}
+
+## Из какой комнаты уходим, если идём в room.
+const SOURCE: Dictionary = {
+	"bathroom": "kids",
+	"kitchen": "bathroom",
+	"living": "kitchen",
+	"kids": "living",
+}
+
+## Вид покидаемой комнаты: пол, стена и дверь (как в игре).
+const LOOK: Dictionary = {
+	"kids": {"floor": Color(0.55, 0.38, 0.24), "wall": Color(0.76, 0.87, 0.97), "door": Color(0.95, 0.93, 0.88)},
+	"bathroom": {"floor": Color(0.82, 0.3, 0.28), "wall": Color(0.95, 0.47, 0.42), "door": Color(0.97, 0.97, 0.98)},
+	"kitchen": {"floor": Color(0.86, 0.8, 0.7), "wall": Color(0.36, 0.43, 0.27), "door": Color(0.72, 0.67, 0.6)},
+	"living": {"floor": Color(0.74, 0.64, 0.52), "wall": Color(0.88, 0.93, 0.98), "door": Color(0.97, 0.95, 0.9)},
 }
 
 @export_group("Комната")
@@ -79,6 +85,7 @@ const ROOMS: Dictionary = {
 @export var shot_door_dist: float = 4.8
 
 var _room: StringName = &"bathroom"
+var _source: StringName = &"kids"
 var _set_root: Node3D
 var _heroes: Node3D
 var _props: Node3D
@@ -102,8 +109,8 @@ func _prepare() -> void:
 	if not ROOMS.has(String(_room)):
 		push_warning("transition: неизвестная комната %s — беру bathroom" % _room)
 		_room = &"bathroom"
-	var palette: Dictionary = ROOMS[String(_room)]
-	_build_room(palette)
+	_source = StringName(SOURCE[String(_room)])
+	_build_room(ROOMS[String(_room)], LOOK[String(_source)])
 
 	_avgust = CutActors.spawn_avgust(_heroes)
 	CutActors.matte(_avgust)
@@ -204,11 +211,11 @@ func _apply_final_state() -> void:
 
 # --- декорации --------------------------------------------------------------
 
-func _build_room(palette: Dictionary) -> void:
-	var floor_col: Color = palette["floor"]
-	var wall_col: Color = palette["wall"]
-	var accent_col: Color = palette["accent"]
-	var glow_col: Color = palette["glow"]
+func _build_room(beyond: Dictionary, look: Dictionary) -> void:
+	var floor_col: Color = look["floor"]
+	var wall_col: Color = look["wall"]
+	var accent_col: Color = look["door"]
+	var glow_col: Color = beyond["glow"]
 
 	var floor_mat := CutSet.material(floor_col, 0.85)
 	var wall_mat := CutSet.material(wall_col, 0.95)
@@ -228,7 +235,7 @@ func _build_room(palette: Dictionary) -> void:
 
 	# Свет из следующей комнаты в проёме.
 	_doorway = CutSet.add_box(_set_root, "Doorway", Vector3(DOOR_RIGHT - DOOR_LEFT - 0.02, DOOR_TOP, 0.02),
-		Vector3(DOOR_X, DOOR_TOP * 0.5, -2.66), CutSet.sky(glow_col, 0.7))
+		Vector3(DOOR_X, DOOR_TOP * 0.5, -2.66), CutSet.sky((beyond["beyond"] as Color).lerp(glow_col, 0.5), 0.8))
 
 	# Дверная коробка и створка на петле слева.
 	var frame := CutSet.material(Color(0.95, 0.93, 0.88), 0.8)
@@ -257,64 +264,145 @@ func _build_room(palette: Dictionary) -> void:
 	_door_light.omni_range = 3.4
 	_set_root.add_child(_door_light)
 
-	_build_room_props(palette, glow_col)
+	_build_source_props(String(_source), glow_col)
 
 
-func _build_room_props(palette: Dictionary, glow_col: Color) -> void:
-	match String(_room):
-		"kids":
-			CutSet.add_box(_set_root, "Rug", Vector3(2.6, 0.006, 1.7),
-				Vector3(-1.3, -0.002, 0.3), CutSet.material(Color(0.42, 0.58, 0.66), 0.95))
-			for i in 3:
-				CutSet.add_box(_set_root, "Brick%d" % i, Vector3(0.32, 0.16, 0.16),
-					Vector3(-1.7 + i * 0.36, 0.08, 0.15), CutSet.material(
-						[Color(0.85, 0.2, 0.2), Color(0.2, 0.45, 0.85), Color(0.95, 0.75, 0.2)][i], 0.55))
-			CutSet.add_box(_set_root, "ToyChest", Vector3(0.9, 0.46, 0.5),
-				Vector3(-3.4, 0.23, -1.9), CutSet.material(Color(0.75, 0.5, 0.28), 0.9))
-		"bathroom":
-			# Коралловая плитка и белая сантехника (решение пользователя).
-			CutSet.add_box(_set_root, "TileBand", Vector3(3.4, 1.5, 0.03),
-				Vector3(-2.3, 1.35, -2.58), CutSet.material(palette["wall"].lightened(0.18), 0.5))
-			var grout := CutSet.material(Color(0.96, 0.93, 0.9), 0.7)
-			for i in 4:
-				CutSet.add_box(_set_root, "TileV%d" % i, Vector3(0.02, 1.5, 0.01),
-					Vector3(-3.15 + i * 0.56, 1.35, -2.56), grout)
-			for j in 2:
-				CutSet.add_box(_set_root, "TileH%d" % j, Vector3(3.4, 0.02, 0.01),
-					Vector3(-2.3, 0.85 + j * 0.5, -2.56), grout)
-			CutSet.add_box(_set_root, "ShowerTray", Vector3(2.0, 0.5, 0.95),
-				Vector3(-2.5, 0.25, -1.55), CutSet.material(Color(0.88, 0.88, 0.87), 0.45))
-			CutSet.add_box(_set_root, "ShowerRim", Vector3(2.1, 0.08, 1.05),
-				Vector3(-2.5, 0.54, -1.55), CutSet.material(Color(0.9, 0.9, 0.89), 0.4))
-			CutSet.add_box(_set_root, "Sink", Vector3(0.5, 0.85, 0.4),
-				Vector3(-4.4, 0.43, -2.1), CutSet.material(Color(0.89, 0.89, 0.88), 0.4))
-			CutSet.add_box(_set_root, "Mirror", Vector3(0.6, 0.7, 0.03),
-				Vector3(-4.4, 1.7, -2.58), CutSet.glow(Color(0.9, 0.96, 1.0), 0.35))
-		"kitchen":
-			CutSet.add_box(_set_root, "Cabinets", Vector3(3.0, 0.9, 0.6),
-				Vector3(-2.6, 0.45, -1.85), CutSet.material(palette["accent"], 0.75))
-			CutSet.add_box(_set_root, "Countertop", Vector3(3.1, 0.08, 0.66),
-				Vector3(-2.6, 0.94, -1.85), CutSet.material(Color(0.93, 0.9, 0.84), 0.5))
-			CutSet.add_box(_set_root, "TableTop", Vector3(0.95, 0.07, 0.9),
-				Vector3(-1.2, 0.72, -0.5), CutSet.material(Color(0.85, 0.68, 0.45), 0.8))
-			CutSet.add_box(_set_root, "TableLeg", Vector3(0.12, 0.7, 0.12),
-				Vector3(-1.2, 0.35, -0.5), CutSet.material(Color(0.72, 0.55, 0.36), 0.85))
-			CutSet.add_box(_set_root, "ChairSeat", Vector3(0.5, 0.08, 0.5),
-				Vector3(-2.1, 0.44, -0.6), CutSet.material(palette["accent"], 0.75))
-			CutSet.add_box(_set_root, "ChairBack", Vector3(0.08, 0.5, 0.5),
-				Vector3(-2.33, 0.7, -0.6), CutSet.material(palette["accent"], 0.75))
-		"living":
-			CutSet.add_box(_set_root, "Rug", Vector3(3.0, 0.006, 2.0),
-				Vector3(-1.6, -0.002, 0.3), CutSet.material(Color(0.55, 0.4, 0.45), 0.95))
-			CutSet.add_box(_set_root, "SofaBase", Vector3(2.2, 0.45, 0.85),
-				Vector3(-2.6, 0.23, -1.5), CutSet.material(palette["accent"], 0.9))
-			CutSet.add_box(_set_root, "SofaBack", Vector3(2.2, 0.7, 0.25),
-				Vector3(-2.6, 0.75, -1.85), CutSet.material(palette["accent"].darkened(0.12), 0.9))
-			CutSet.add_box(_set_root, "Cushion1", Vector3(0.55, 0.4, 0.16),
-				Vector3(-3.0, 0.72, -1.7), CutSet.material(Color(0.95, 0.8, 0.45), 0.9))
-			CutSet.add_box(_set_root, "Cushion2", Vector3(0.55, 0.4, 0.16),
-				Vector3(-2.3, 0.72, -1.7), CutSet.material(Color(0.95, 0.8, 0.45), 0.9))
-			CutSet.add_box(_set_root, "FloorLampPole", Vector3(0.05, 1.5, 0.05),
-				Vector3(0.4, 0.75, -2.0), CutSet.material(Color(0.5, 0.45, 0.4), 0.8))
-			CutSet.add_box(_set_root, "FloorLampShade", Vector3(0.38, 0.3, 0.38),
-				Vector3(0.4, 1.62, -2.0), CutSet.glow(glow_col, 0.8))
+## Обстановка покидаемой комнаты — как в игре, на примитивах.
+func _build_source_props(src: String, glow_col: Color) -> void:
+	match src:
+		"kids": _props_kids()
+		"bathroom": _props_bathroom()
+		"kitchen": _props_kitchen()
+		"living": _props_living(glow_col)
+
+
+func _front(parent_name: String, size: Vector3, pos: Vector3, color: Color, rough := 0.85) -> MeshInstance3D:
+	return CutSet.add_box(_set_root, parent_name, size, pos, CutSet.material(color, rough))
+
+
+func _skirting(color: Color) -> void:
+	_front("Skirting", Vector3(DOOR_LEFT + 7.0, 0.2, 0.06), Vector3((-7.0 + DOOR_LEFT) * 0.5, 0.1, -2.57), color)
+	_front("SkirtingR", Vector3(9.0 - DOOR_RIGHT, 0.2, 0.06), Vector3((DOOR_RIGHT + 9.0) * 0.5, 0.1, -2.57), color)
+
+
+func _props_kids() -> void:
+	# Обои в голубую полоску со звёздочками, плинтус, ковёр, кирпичики, мишка и кровать с ночником.
+	for i in 8:
+		_front("Stripe%d" % i, Vector3(0.55, WALL_TOP, 0.01), Vector3(-6.4 + i * 1.1, WALL_TOP * 0.5, -2.585),
+			Color(0.62, 0.78, 0.95) if i % 2 == 0 else Color(0.76, 0.87, 0.97))
+	for i in 7:
+		var star := _front("Star%d" % i, Vector3(0.12, 0.12, 0.01), Vector3(-6.0 + i * 1.0, 3.2 + (i % 3) * 0.5, -2.575), Color(1.0, 0.86, 0.4))
+		star.rotation.z = PI * 0.25
+	_skirting(Color(0.97, 0.95, 0.9))
+	_front("Rug", Vector3(3.0, 0.008, 1.9), Vector3(-1.4, 0.004, 0.3), Color(0.22, 0.55, 0.58), 0.95)
+	var brick_colors: Array[Color] = [Color(0.88, 0.22, 0.2), Color(0.2, 0.5, 0.95), Color(1.0, 0.78, 0.15), Color(0.25, 0.75, 0.35)]
+	for i in 6:
+		_front("Brick%d" % i, Vector3(0.34, 0.17, 0.17), Vector3(-2.2 + (i % 3) * 0.36, 0.09 + (i / 3) * 0.17, 0.0),
+			brick_colors[i % brick_colors.size()], 0.55)
+	# Мишка.
+	var fur := CutSet.material(Color(0.78, 0.55, 0.32), 0.95)
+	CutSet.add_sphere(_set_root, "BearBody", 0.34, Vector3(-4.2, 0.38, -1.8), fur)
+	CutSet.add_sphere(_set_root, "BearHead", 0.24, Vector3(-4.2, 0.86, -1.8), fur)
+	CutSet.add_sphere(_set_root, "BearEarL", 0.09, Vector3(-4.38, 1.08, -1.8), fur, 10)
+	CutSet.add_sphere(_set_root, "BearEarR", 0.09, Vector3(-4.02, 1.08, -1.8), fur, 10)
+	# Кровать с одеялом и ночник.
+	_front("BedFrame", Vector3(1.8, 0.55, 1.0), Vector3(-5.6, 0.28, -1.9), Color(0.62, 0.4, 0.23), 0.7)
+	_front("Blanket", Vector3(1.4, 0.12, 1.02), Vector3(-5.4, 0.6, -1.9), Color(0.95, 0.5, 0.4), 0.95)
+	_front("Pillow", Vector3(0.5, 0.14, 0.4), Vector3(-6.2, 0.64, -1.9), Color(0.97, 0.95, 0.9), 0.95)
+
+
+func _props_bathroom() -> void:
+	# Коралловая плитка с белыми швами, пол из плитки, поддон душевой с водой и игрушками, раковина с зеркалом.
+	var grout := CutSet.material(Color(0.97, 0.94, 0.92), 0.7)
+	for i in 14:
+		CutSet.add_box(_set_root, "GroutV%d" % i, Vector3(0.025, WALL_TOP, 0.01), Vector3(-6.5 + i * 1.0, WALL_TOP * 0.5, -2.585), grout)
+	for j in 5:
+		CutSet.add_box(_set_root, "GroutH%d" % j, Vector3(16.0, 0.025, 0.01), Vector3(0.0, 0.8 + j * 0.9, -2.585), grout)
+	for i in 8:
+		CutSet.add_box(_set_root, "FloorGroutV%d" % i, Vector3(0.025, 0.004, 4.6), Vector3(-6.0 + i * 1.7, 0.003, -0.25), grout)
+	_skirting(Color(0.97, 0.94, 0.9))
+	# Поддон: белые бортики и вода.
+	var white := Color(0.97, 0.97, 0.98)
+	_front("TrayBack", Vector3(3.2, 0.5, 0.12), Vector3(-3.0, 0.25, -1.8), white, 0.45)
+	_front("TrayFront", Vector3(3.2, 0.5, 0.12), Vector3(-3.0, 0.25, -0.6), white, 0.45)
+	_front("TrayL", Vector3(0.12, 0.5, 1.3), Vector3(-4.6, 0.25, -1.2), white, 0.45)
+	_front("TrayR", Vector3(0.12, 0.5, 1.3), Vector3(-1.4, 0.25, -1.2), white, 0.45)
+	var water := CutSet.glow(Color(0.45, 0.75, 0.95), 0.4)
+	CutSet.add_box(_set_root, "Water", Vector3(3.0, 0.02, 1.1), Vector3(-3.0, 0.42, -1.2), water)
+	# Игрушки: уточка, лебедь, чёрная пробка на цепочке.
+	var yellow := CutSet.material(Color(1.0, 0.85, 0.15), 0.5)
+	CutSet.add_sphere(_set_root, "Duck", 0.2, Vector3(-3.6, 0.55, -1.2), yellow)
+	CutSet.add_sphere(_set_root, "DuckHead", 0.12, Vector3(-3.45, 0.78, -1.2), yellow, 12)
+	var swan := CutSet.material(Color(0.97, 0.97, 0.98), 0.5)
+	CutSet.add_sphere(_set_root, "Swan", 0.26, Vector3(-2.4, 0.56, -1.2), swan)
+	CutSet.add_sphere(_set_root, "SwanNeck", 0.1, Vector3(-2.2, 0.85, -1.2), swan, 12)
+	CutSet.add_cylinder(_set_root, "Plug", 0.1, 0.12, 0.05, Vector3(-3.0, 0.42, -1.4), CutSet.material(Color(0.07, 0.07, 0.08), 0.5))
+	# Раковина с зеркалом в рамке.
+	_front("SinkCabinet", Vector3(1.0, 0.85, 0.5), Vector3(0.3, 0.43, -2.2), white, 0.45)
+	_front("MirrorFrame", Vector3(1.0, 0.9, 0.04), Vector3(0.3, 1.9, -2.57), Color(0.97, 0.97, 0.98), 0.5)
+	CutSet.add_box(_set_root, "Mirror", Vector3(0.86, 0.76, 0.02), Vector3(0.3, 1.9, -2.55), CutSet.glow(Color(0.8, 0.92, 1.0), 0.35))
+	# Полотенца на рейке.
+	_front("TowelRail", Vector3(0.9, 0.04, 0.05), Vector3(-5.6, 2.3, -2.5), white)
+	_front("Towel1", Vector3(0.34, 0.7, 0.03), Vector3(-5.85, 1.92, -2.5), Color(0.95, 0.55, 0.25), 0.95)
+	_front("Towel2", Vector3(0.34, 0.7, 0.03), Vector3(-5.4, 1.92, -2.5), Color(0.55, 0.8, 0.9), 0.95)
+
+
+func _props_kitchen() -> void:
+	# Тёмная фисташка, угольные шкафчики со светлой серо-деревянной столешницей, серый холодильник, лампа над столом.
+	var charcoal := Color(0.04, 0.04, 0.045)
+	var wood := Color(0.72, 0.67, 0.6)
+	_front("Backsplash", Vector3(5.4, 1.0, 0.01), Vector3(-3.3, 1.45, -2.58), wood, 0.7)
+	_front("Cabinets", Vector3(5.4, 0.9, 0.7), Vector3(-3.3, 0.45, -2.2), charcoal, 0.6)
+	_front("Countertop", Vector3(5.5, 0.08, 0.76), Vector3(-3.3, 0.94, -2.2), wood, 0.6)
+	for i in 4:
+		CutSet.add_box(_set_root, "Handle%d" % i, Vector3(0.28, 0.03, 0.02), Vector3(-5.4 + i * 1.4, 0.7, -1.83), CutSet.material(Color(0.78, 0.8, 0.84), 0.3, 0.6))
+	_front("Upper", Vector3(5.4, 1.0, 0.45), Vector3(-3.3, 3.3, -2.35), charcoal, 0.6)
+	_front("Fridge", Vector3(1.0, 2.5, 0.8), Vector3(-6.4, 1.25, -2.15), Color(0.5, 0.52, 0.55), 0.55)
+	_skirting(charcoal)
+	# Стол со стулом и лампой над ним.
+	_front("TableTop", Vector3(1.5, 0.08, 1.0), Vector3(-0.2, 0.74, -0.5), wood, 0.7)
+	_front("TableLeg", Vector3(0.12, 0.7, 0.12), Vector3(-0.2, 0.37, -0.5), Color(0.62, 0.57, 0.5), 0.8)
+	_front("ChairSeat", Vector3(0.5, 0.08, 0.5), Vector3(-1.2, 0.44, -0.6), wood, 0.7)
+	_front("ChairBack", Vector3(0.5, 0.5, 0.08), Vector3(-1.2, 0.7, -0.88), wood, 0.7)
+	CutSet.add_cylinder(_set_root, "LampCord", 0.01, 0.01, 1.4, Vector3(-0.2, 3.3, -0.5), CutSet.material(Color(0.1, 0.1, 0.1), 0.7))
+	CutSet.add_cylinder(_set_root, "LampShade", 0.05, 0.3, 0.3, Vector3(-0.2, 2.45, -0.5), CutSet.material(charcoal, 0.5))
+	CutSet.add_sphere(_set_root, "LampBulb", 0.09, Vector3(-0.2, 2.28, -0.5), CutSet.glow(Color(1.0, 0.9, 0.65), 0.6), 10)
+
+
+func _props_living(glow_col: Color) -> void:
+	# Бело-голубые обои с птичками, серо-бежевый диван с разноцветными подушками, рыжее винтажное кресло,
+	# фисташковая штора, телевизор, торшер.
+	for i in 8:
+		_front("Stripe%d" % i, Vector3(0.9, WALL_TOP, 0.01), Vector3(-6.3 + i * 1.8, WALL_TOP * 0.5, -2.585), Color(0.8, 0.88, 0.96))
+	var bird := CutSet.material(Color(0.5, 0.76, 0.97), 0.8)
+	for i in 8:
+		var x := -6.0 + i * 1.5
+		var y := 3.0 + (i % 3) * 0.55
+		var w1 := CutSet.add_box(_set_root, "BirdL%d" % i, Vector3(0.2, 0.04, 0.01), Vector3(x - 0.09, y + 0.04, -2.575), bird)
+		w1.rotation.z = 0.5
+		var w2 := CutSet.add_box(_set_root, "BirdR%d" % i, Vector3(0.2, 0.04, 0.01), Vector3(x + 0.09, y + 0.04, -2.575), bird)
+		w2.rotation.z = -0.5
+	_skirting(Color(0.97, 0.95, 0.9))
+	var sofa := Color(0.78, 0.74, 0.68)
+	_front("SofaBase", Vector3(2.8, 0.5, 0.95), Vector3(-3.3, 0.25, -1.9), sofa, 0.9)
+	_front("SofaBack", Vector3(2.8, 0.75, 0.3), Vector3(-3.3, 0.85, -2.25), sofa.darkened(0.06), 0.9)
+	var cushion_colors: Array[Color] = [Color(0.9, 0.3, 0.3), Color(0.25, 0.55, 0.85), Color(0.95, 0.78, 0.2), Color(0.35, 0.72, 0.45), Color(0.85, 0.45, 0.7)]
+	for i in 5:
+		var c := _front("Cushion%d" % i, Vector3(0.45, 0.45, 0.14), Vector3(-4.4 + i * 0.5, 0.82, -1.92), cushion_colors[i], 0.9)
+		c.rotation = Vector3(-0.2, 0.0, (i - 2) * 0.12)
+	# Винтажное кресло: тёмное дерево, ножки, подлокотники, две оранжевые подушки.
+	var orange := Color(1.0, 0.4, 0.04)
+	var dark := CutSet.material(Color(0.28, 0.16, 0.09), 0.7)
+	for lx in [-0.75, 0.25]:
+		for lz in [-1.4, -2.0]:
+			CutSet.add_box(_set_root, "ChairLeg", Vector3(0.09, 0.4, 0.09), Vector3(lx, 0.2, lz), dark)
+	CutSet.add_box(_set_root, "ChairFrame", Vector3(1.3, 0.1, 0.8), Vector3(-0.25, 0.45, -1.7), dark)
+	_front("ChairSeat", Vector3(1.15, 0.2, 0.75), Vector3(-0.25, 0.6, -1.7), orange, 0.9)
+	CutSet.add_box(_set_root, "ChairBackFrame", Vector3(1.3, 0.95, 0.1), Vector3(-0.25, 1.1, -2.1), dark)
+	_front("ChairBackCushion", Vector3(1.0, 0.6, 0.2), Vector3(-0.25, 1.0, -1.97), orange, 0.9)
+	# Штора, телевизор, торшер.
+	_front("Curtain", Vector3(1.7, 3.6, 0.1), Vector3(-6.5, 2.0, -2.5), Color(0.42, 0.57, 0.38), 0.95)
+	_front("TV", Vector3(1.6, 0.95, 0.06), Vector3(5.3, 1.45, -2.5), Color(0.04, 0.04, 0.05), 0.4)
+	_front("TVStand", Vector3(1.9, 0.6, 0.5), Vector3(5.3, 0.3, -2.3), Color(0.66, 0.6, 0.52), 0.8)
+	CutSet.add_cylinder(_set_root, "FloorLampPole", 0.025, 0.025, 1.6, Vector3(1.6, 0.8, -2.1), CutSet.material(Color(0.3, 0.3, 0.32), 0.7))
+	CutSet.add_cylinder(_set_root, "FloorLampShade", 0.16, 0.28, 0.4, Vector3(1.6, 1.75, -2.1), CutSet.glow(glow_col, 0.7))

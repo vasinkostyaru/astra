@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
 [ext_resource type="PackedScene" path="res://assets/models/avgust/avgust.glb" id="2_avgust"]
+[ext_resource type="Script" path="res://scripts/face_details.gd" id="3_face"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.3
@@ -20,3 +21,6 @@ shape = SubResource("Shape_body")
 
 [node name="Avgust" parent="Model" instance=ExtResource("2_avgust")]
 rotation_degrees = Vector3(0, 90, 0)
+
+[node name="FaceDetails" type="Node3D" parent="Model"]
+script = ExtResource("3_face")

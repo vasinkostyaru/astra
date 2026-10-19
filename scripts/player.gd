@@ -81,6 +81,15 @@ func _physics_process(delta: float) -> void:
 	_update_animation()
 
 
+## Подбросило (батут): взлетает на height, как при прыжке, но выше.
+func bounce(height: float) -> void:
+	if _controls_locked:
+		return
+	velocity.y = sqrt(2.0 * gravity * height)
+	_coyote_left = 0.0
+	_jump_stretch()
+
+
 func set_checkpoint(point: Vector3) -> void:
 	respawn_point = point
 

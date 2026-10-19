@@ -13,6 +13,7 @@ signal finished(name: StringName)
 const SCENES: Dictionary = {
 	&"intro": "res://cutscenes/intro.tscn",
 	&"transition": "res://cutscenes/transition_room.tscn",
+	&"finale": "res://cutscenes/finale.tscn",
 }
 
 var is_playing: bool = false
