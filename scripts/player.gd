@@ -35,6 +35,12 @@ var _model_scale: Vector3
 var _anim_player: AnimationPlayer
 var _stretch_tween: Tween
 var _current_anim: StringName = &""
+var _was_on_floor: bool = true
+## Толчок (горка): пока _push_left > 0, едет со скоростью _push_speed, ввод не мешает.
+var _push_left: float = 0.0
+var _push_speed: float = 0.0
+var _fall_speed: float = 0.0
+var _dust_left: float = 0.0
 
 
 func _ready() -> void:
@@ -50,7 +56,11 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var dir := Input.get_axis(&"move_left", &"move_right")
-	velocity.x = move_toward(velocity.x, dir * move_speed, acceleration * delta)
+	if _push_left > 0.0:
+		_push_left -= delta
+		velocity.x = _push_speed
+	else:
+		velocity.x = move_toward(velocity.x, dir * move_speed, acceleration * delta)
 
 	if is_on_floor():
 		_coyote_left = coyote_time
@@ -79,6 +89,15 @@ func _physics_process(delta: float) -> void:
 
 	_update_facing(dir, delta)
 	_update_animation()
+	_update_juice(delta)
+
+
+## Горка: «с ветерком» едет вперёд со скоростью speed в течение time секунд.
+func push(speed: float, time: float) -> void:
+	if _controls_locked:
+		return
+	_push_speed = speed
+	_push_left = time
 
 
 ## Подбросило (батут): взлетает на height, как при прыжке, но выше.
@@ -102,6 +121,7 @@ func return_to_checkpoint() -> void:
 	_controls_locked = true
 	velocity = Vector3.ZERO
 	_jump_buffer_left = 0.0
+	_push_left = 0.0
 	_launch_return()
 
 
@@ -219,13 +239,38 @@ func _finish_return() -> void:
 	respawned.emit()
 
 
+## Приземление: сплющился и выпрямился, облачко пыли; на бегу — маленькие облачка из-под ног.
+func _update_juice(delta: float) -> void:
+	var on_floor := is_on_floor()
+	if on_floor and not _was_on_floor and _fall_speed > 3.0:
+		var k := clampf(_fall_speed / 10.0, 0.4, 1.0)
+		_squash(Vector3(1.0 + 0.14 * k, 1.0 - 0.18 * k, 1.0 + 0.14 * k), 0.22)
+		Fx.puff(get_parent(), global_position, int(10 + 8 * k), 0.8 + k)
+	if not on_floor:
+		_fall_speed = maxf(-velocity.y, 0.0)
+	_was_on_floor = on_floor
+	_dust_left -= delta
+	if on_floor and absf(velocity.x) > move_speed * 0.6 and _dust_left <= 0.0:
+		_dust_left = 0.28
+		Fx.puff(get_parent(), global_position - Vector3(signf(velocity.x) * 0.15, 0, 0), 3, 0.5)
+
+
+func _squash(amount: Vector3, time: float) -> void:
+	if _stretch_tween:
+		_stretch_tween.kill()
+	model.scale = _model_scale * amount
+	_stretch_tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_stretch_tween.tween_property(model, "scale", _model_scale, time) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 ## Мгновенный отклик на прыжок: вытянулся вверх в первом же кадре и вернулся к обычной форме.
 func _jump_stretch() -> void:
 	if _stretch_tween:
 		_stretch_tween.kill()
-	model.scale = _model_scale * Vector3(0.97, 1.05, 0.97)
+	model.scale = _model_scale * Vector3(0.9, 1.12, 0.9)
 	_stretch_tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	_stretch_tween.tween_property(model, "scale", _model_scale, 0.15) \
+	_stretch_tween.tween_property(model, "scale", _model_scale, 0.25) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 

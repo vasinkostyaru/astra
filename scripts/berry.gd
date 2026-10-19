@@ -121,6 +121,7 @@ func _on_body_entered(body: Node3D) -> void:
 	_taken = true
 	collected.emit(self)
 	set_deferred("monitoring", false)
+	Fx.sparkle(get_parent(), global_position, get_color())
 	var tw := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tw.tween_property(_visual, "scale", Vector3.ONE * 1.5, 0.1)
 	tw.tween_property(_visual, "scale", Vector3.ONE * 0.01, 0.18).set_ease(Tween.EASE_IN)

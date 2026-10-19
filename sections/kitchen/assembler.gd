@@ -29,3 +29,6 @@ func _setup() -> void:
 	activities.append(preload("res://sections/kitchen/act_lids.gd"))
 	activities.append(preload("res://sections/kitchen/act_piano.gd"))
 	activities.append(preload("res://sections/kitchen/act_pyramid.gd"))
+	activities.append(preload("res://sections/common/act_slide.gd"))
+	activities.append(preload("res://sections/common/act_train.gd"))
+	activities.append(preload("res://sections/common/act_ball.gd"))

@@ -300,6 +300,12 @@ func _load_progress() -> void:
 		completed_levels.append(i)
 
 
+## Начать сначала: все комнаты снова не пройдены.
+func reset_progress() -> void:
+	completed_levels.clear()
+	_save_progress()
+
+
 func _save_progress() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("progress", "completed", completed_levels)

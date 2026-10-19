@@ -7,7 +7,7 @@ extends Node3D
 ## Сид сборки; 0 — случайный. Сид текущей сборки печатается в консоль (для воспроизведения сломанной сборки).
 @export var seed_value: int = 0
 @export_range(0, 12) var mids_before_feature: int = 6
-@export_range(0, 12) var activities_per_level: int = 3
+@export_range(0, 12) var activities_per_level: int = 4
 @export_range(0, 12) var mids_after_feature: int = 6
 @export var astra_path: Node3D
 @export var main_lamp: Node3D
@@ -25,7 +25,7 @@ var start_section: GDScript
 var feature_section: GDScript
 var end_section: GDScript
 var pool: Array[GDScript] = []
-## Занятия: встают вместо случайных середин; всего activities_per_level (3) на уровень, по одному каждого вида.
+## Занятия: встают вместо случайных середин; всего activities_per_level (4) на уровень, по одному каждого вида.
 var activities: Array[GDScript] = []
 
 var used_seed: int = 0

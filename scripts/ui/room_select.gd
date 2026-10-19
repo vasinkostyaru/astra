@@ -7,6 +7,7 @@ const GAP := 0.05
 
 var _cards: Array[RoomCard] = []
 var _back: PictureButton
+var _restart: RestartButton
 
 
 func _ready() -> void:
@@ -23,6 +24,9 @@ func _ready() -> void:
 	_back.kind = PictureButton.Kind.BACK
 	_back.pressed.connect(func() -> void: leave(Game.go_to_start))
 	ui.add_child(_back)
+	_restart = RestartButton.new()
+	_restart.held.connect(_on_restart)
+	ui.add_child(_restart)
 	ui.get_viewport().size_changed.connect(_layout)
 	_layout()
 
@@ -45,6 +49,8 @@ func _layout() -> void:
 	var b := vs.y * 0.16
 	_back.size = Vector2(b, b)
 	_back.position = Vector2(vs.y * 0.04, vs.y * 0.04)
+	_restart.size = Vector2(b, b)
+	_restart.position = Vector2(vs.x - b - vs.y * 0.04, vs.y * 0.04)
 
 
 func _on_card(card: RoomCard) -> void:
@@ -52,3 +58,12 @@ func _on_card(card: RoomCard) -> void:
 		leave(Game.go_to_level.bind(card.room))
 	else:
 		card.wobble()
+
+
+## «Сначала»: пройденные комнаты забываются, снова показывается интро, потом — выбор комнаты заново.
+func _on_restart() -> void:
+	Game.reset_progress()
+	Cutscenes.reset_played()
+	Cutscenes.play(&"intro")
+	await Cutscenes.finished
+	leave(Game.go_to_rooms)

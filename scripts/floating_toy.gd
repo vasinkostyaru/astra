@@ -38,7 +38,19 @@ func _physics_process(delta: float) -> void:
 	_visual.rotation.z = sin(_time * 0.7) * 0.025
 
 
+const MODELS := {Kind.SWAN: "swan", Kind.DUCK: "duck", Kind.CAR: "car", Kind.BOAT: "boat"}
+
+
 static func build_visual(k: Kind, parent: Node3D) -> void:
+	var scene := load("res://assets/models/toys/%s.glb" % MODELS[k]) as PackedScene
+	if scene != null:
+		parent.add_child(scene.instantiate())
+		return
+	_build_primitives(k, parent)
+
+
+## Запасной вариант, если модели нет: примитивы.
+static func _build_primitives(k: Kind, parent: Node3D) -> void:
 	match k:
 		Kind.SWAN:
 			var white := Color(0.97, 0.97, 0.98)

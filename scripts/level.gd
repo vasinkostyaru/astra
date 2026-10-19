@@ -33,6 +33,7 @@ func _ready() -> void:
 	_required = maxi(mini(_required, total), 1)
 	hud.jar.total = _required
 	player.fall_limit_y = fall_limit_y
+	Fx.grade(self)
 	if astra:
 		astra.reached_by_player.connect(_on_level_completed)
 

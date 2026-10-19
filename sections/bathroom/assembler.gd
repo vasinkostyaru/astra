@@ -30,3 +30,6 @@ func _setup() -> void:
 	activities.append(preload("res://sections/bathroom/act_bubbles.gd"))
 	activities.append(preload("res://sections/bathroom/act_piano.gd"))
 	activities.append(preload("res://sections/bathroom/act_trampoline.gd"))
+	activities.append(preload("res://sections/common/act_slide.gd"))
+	activities.append(preload("res://sections/common/act_train.gd"))
+	activities.append(preload("res://sections/common/act_ball.gd"))

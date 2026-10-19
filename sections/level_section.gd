@@ -48,6 +48,7 @@ func _build() -> void:
 
 
 ## Коробка-опора: x — левый край, y — низ, размеры w × h; по Z — depth по центру.
+## Скруглённая, с зерном, затемнённым низом и мягкой тенью на полу.
 func box(x: float, y: float, w: float, h: float, color: Color, depth: float = 2.0) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.position = Vector3(x + w * 0.5, y + h * 0.5, 0.0)
@@ -56,14 +57,155 @@ func box(x: float, y: float, w: float, h: float, color: Color, depth: float = 2.
 	var col := CollisionShape3D.new()
 	col.shape = shape
 	body.add_child(col)
-	var mesh := BoxMesh.new()
-	mesh.size = shape.size
-	mesh.material = _material(color)
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	mi.mesh = _rounded_mesh(shape.size, 0.12, y)
+	mi.material_override = _soft_material(color, _surface())
+	if y < 0.05 and depth < 4.0:
+		_floor_shadow(x, w, depth)
 	body.add_child(mi)
 	add_child(body)
 	return body
+
+
+static var _rounded: Dictionary = {}  # "size|y" -> ArrayMesh
+static var _soft: Dictionary = {}  # "цвет|поверхность" -> StandardMaterial3D
+static var _grain: Texture2D
+static var _shadow_tex: Texture2D
+static var _shadow_mat: StandardMaterial3D
+
+
+## Куб со скруглёнными рёбрами (радиус r); цвет вершин — «ненастоящая» AO: низ темнее.
+## bottom_y — высота низа блока над полом (чем ниже, тем темнее у пола).
+static func _rounded_mesh(size: Vector3, r: float, bottom_y: float) -> ArrayMesh:
+	var key := "%s|%.2f" % [size, bottom_y]
+	if _rounded.has(key):
+		return _rounded[key]
+	var half := size * 0.5
+	r = minf(r, minf(half.x, minf(half.y, half.z)) * 0.9)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var stops: Array[Array] = []
+	for ax in 3:
+		var h: float = half[ax]
+		var f: Array[float] = [-h, -h + r * 0.29, -h + r * 0.71, -h + r, h - r, h - r * 0.71, h - r * 0.29, h]
+		stops.append(f)
+	for ax in 3:
+		var u := (ax + 1) % 3
+		var v := (ax + 2) % 3
+		for sign in [-1.0, 1.0]:
+			var grid: Array = []
+			for iu in stops[u].size():
+				var row: Array = []
+				for iv in stops[v].size():
+					var p := Vector3.ZERO
+					p[ax] = half[ax] * sign
+					p[u] = stops[u][iu]
+					p[v] = stops[v][iv]
+					var c := p.clamp(-half + Vector3.ONE * r, half - Vector3.ONE * r)
+					var d := p - c
+					var n := d.normalized()
+					p = c + n * r
+					var ao := lerpf(0.7, 1.0, clampf((bottom_y + p.y + half.y) / 0.7, 0.0, 1.0))
+					row.append([p, n, Color(ao, ao, ao)])
+				grid.append(row)
+			for iu in stops[u].size() - 1:
+				for iv in stops[v].size() - 1:
+					var a: Array = grid[iu][iv]
+					var b: Array = grid[iu + 1][iv]
+					var c2: Array = grid[iu + 1][iv + 1]
+					var d2: Array = grid[iu][iv + 1]
+					var quad: Array = [a, b, c2, a, c2, d2]
+					if sign > 0.0:
+						quad = [a, c2, b, a, d2, c2]
+					for q in quad:
+						st.set_normal(q[1])
+						st.set_color(q[2])
+						st.add_vertex(q[0])
+	var mesh := st.commit()
+	_rounded[key] = mesh
+	return mesh
+
+
+const SURFACES := {
+	"fabric": [preload("res://assets/textures/surfaces/fabric.png"), preload("res://assets/textures/surfaces/fabric_n.png"), 1.2],
+	"wood": [preload("res://assets/textures/surfaces/wood.png"), preload("res://assets/textures/surfaces/wood_n.png"), 0.35],
+	"carpet": [preload("res://assets/textures/surfaces/carpet.png"), preload("res://assets/textures/surfaces/carpet_n.png"), 0.8],
+}
+
+
+## Чем покрыты блоки в этой комнате: ткань (детская, гостиная), дерево (кухня), гладкое с зерном (ванная).
+func _surface() -> String:
+	match theme:
+		"kitchen":
+			return "wood"
+		"bath":
+			return "grain"
+	return "fabric"
+
+
+## Матовый материал с текстурой поверхности (трипланарная — без UV, одинаковый масштаб на всех блоках).
+## Текстуры серые: цвет блока задаёт color.
+static func _soft_material(color: Color, surface: String = "grain") -> StandardMaterial3D:
+	var key := "%s|%s" % [color, surface]
+	if not _soft.has(key):
+		var m := StandardMaterial3D.new()
+		m.albedo_color = color
+		m.vertex_color_use_as_albedo = true
+		m.uv1_triplanar = true
+		m.uv1_world_triplanar = true
+		m.roughness = 0.9
+		m.metallic_specular = 0.2
+		if SURFACES.has(surface):
+			var t: Array = SURFACES[surface]
+			m.albedo_texture = t[0]
+			m.normal_enabled = true
+			m.normal_texture = t[1]
+			m.normal_scale = 0.8
+			m.uv1_scale = Vector3.ONE * float(t[2])
+		else:
+			m.albedo_texture = _grain_texture()
+			m.uv1_scale = Vector3.ONE * 0.6
+			m.roughness = 0.6
+		_soft[key] = m
+	return _soft[key]
+
+
+static func _grain_texture() -> Texture2D:
+	if _grain == null:
+		var noise := FastNoiseLite.new()
+		noise.frequency = 0.06
+		noise.fractal_octaves = 3
+		var img := noise.get_seamless_image(128, 128)
+		for yy in 128:
+			for xx in 128:
+				var g := lerpf(0.86, 1.0, img.get_pixel(xx, yy).r)
+				img.set_pixel(xx, yy, Color(g, g, g))
+		_grain = ImageTexture.create_from_image(img)
+	return _grain
+
+
+## Мягкая тень у основания блока на полу.
+func _floor_shadow(x: float, w: float, depth: float) -> void:
+	if _shadow_tex == null:
+		var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+		for yy in 64:
+			for xx in 64:
+				var d := Vector2(xx - 31.5, yy - 31.5).length() / 32.0
+				img.set_pixel(xx, yy, Color(0, 0, 0, 0.5 * clampf(1.0 - d, 0.0, 1.0) ** 0.8))
+		_shadow_tex = ImageTexture.create_from_image(img)
+		_shadow_mat = StandardMaterial3D.new()
+		_shadow_mat.albedo_texture = _shadow_tex
+		_shadow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_shadow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_shadow_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(w + 1.2, depth + 1.0)
+	plane.material = _shadow_mat
+	var mi := MeshInstance3D.new()
+	mi.mesh = plane
+	mi.position = Vector3(x + w * 0.5, 0.045, 0.0)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 
 ## Только картинка, без коллизии (ковёр, рисунок на стене).
@@ -289,10 +431,10 @@ func _rug(x0: float, x1: float, depth: float, color: Color) -> void:
 	cuts.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for p in cuts:
 		if p.x - from > 0.3:
-			decor(from, 0.0, p.x - from, 0.03, 0.0, depth, color)
+			decor(from, 0.0, p.x - from, 0.03, 0.0, depth, color).material_override = _soft_material(color, "carpet")
 		from = maxf(from, p.y)
 	if x1 - from > 0.3:
-		decor(from, 0.0, x1 - from, 0.03, 0.0, depth, color)
+		decor(from, 0.0, x1 - from, 0.03, 0.0, depth, color).material_override = _soft_material(color, "carpet")
 
 
 const CHARCOAL := Color(0.035, 0.037, 0.042)
@@ -388,15 +530,34 @@ func _fridge(x: float) -> void:
 	decor(x, 3.1, 2.4, 0.05, -1.88, 0.02, Color(0.3, 0.32, 0.35))
 
 
+## Готовая модель (GLB) без коллизии: по центру x, низом на y, высотой height.
+func prop(model: String, x: float, y: float, z: float, height: float) -> Node3D:
+	var root := Node3D.new()
+	var scene := load("res://assets/models/kenney/%s.glb" % model) as PackedScene
+	if scene == null:
+		return root
+	var inst := scene.instantiate() as Node3D
+	var lo := Vector3(INF, INF, INF)
+	var hi := Vector3(-INF, -INF, -INF)
+	for n in inst.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		var bb := mi.transform * mi.get_aabb()
+		lo = lo.min(bb.position)
+		hi = hi.max(bb.end)
+	inst.position = Vector3(-(lo.x + hi.x) * 0.5, -lo.y, -(lo.z + hi.z) * 0.5)
+	root.add_child(inst)
+	root.scale = Vector3.ONE * (height / maxf(hi.y - lo.y, 0.001))
+	root.position = Vector3(x, y, z)
+	add_child(root)
+	return root
+
+
 func _jar_shelf(x: float, rng: RandomNumberGenerator, w: float = 3.0) -> void:
 	var y := 3.1
 	decor(x, y, w, 0.1, -2.7, 0.7, WOOD_TOP)
-	var colors: Array[Color] = [Color(0.95, 0.75, 0.3), Color(0.85, 0.3, 0.3), Color(0.9, 0.9, 0.85), Color(0.55, 0.35, 0.2), Color(0.5, 0.7, 0.35)]
+	var items: Array[String] = ["bottle-oil", "honey", "can", "mug", "pepper-mill", "shaker-salt", "cup-tea", "bowl"]
 	for i in int((w - 0.2) / 0.7):
-		var h := rng.randf_range(0.6, 0.9)
-		decor(x + 0.2 + i * 0.7, y + 0.1, 0.5, h, -2.65, 0.4, Color(0.85, 0.92, 0.95))
-		decor(x + 0.24 + i * 0.7, y + 0.12, 0.42, h * 0.7, -2.62, 0.34, colors[rng.randi() % colors.size()])
-		decor(x + 0.18 + i * 0.7, y + 0.1 + h, 0.54, 0.1, -2.65, 0.44, CHARCOAL)
+		prop(items[rng.randi() % items.size()], x + 0.45 + i * 0.7, y + 0.1, -2.65, rng.randf_range(0.5, 0.85))
 
 
 func _wall_clock(x: float) -> void:
@@ -760,11 +921,11 @@ func _bookshelf(x: float, rng: RandomNumberGenerator) -> void:
 			bx += w + 0.02
 
 
-func _sphere(pos: Vector3, radius: float, color: Color, squash: float = 1.0) -> void:
+func _sphere(pos: Vector3, radius: float, color: Color, squash: float = 1.0, surface: String = "") -> void:
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2.0
-	mesh.material = _material(color)
+	mesh.material = _soft_material(color, surface) if surface != "" else _material(color)
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.position = pos
@@ -776,16 +937,16 @@ func _sphere(pos: Vector3, radius: float, color: Color, squash: float = 1.0) -> 
 func _teddy(x: float, rng: RandomNumberGenerator) -> void:
 	var fur := Color(0.72, 0.5, 0.3) if rng.randi() % 2 == 0 else Color(0.9, 0.75, 0.55)
 	var z := -2.2
-	_sphere(Vector3(x + 0.8, 0.8, z), 0.8, fur, 1.05)
-	_sphere(Vector3(x + 0.8, 1.9, z), 0.55, fur)
-	_sphere(Vector3(x + 0.35, 2.35, z), 0.2, fur)
-	_sphere(Vector3(x + 1.25, 2.35, z), 0.2, fur)
-	_sphere(Vector3(x + 0.8, 1.8, z + 0.45), 0.22, Color(0.95, 0.85, 0.7))
+	_sphere(Vector3(x + 0.8, 0.8, z), 0.8, fur, 1.05, "carpet")
+	_sphere(Vector3(x + 0.8, 1.9, z), 0.55, fur, 1.0, "carpet")
+	_sphere(Vector3(x + 0.35, 2.35, z), 0.2, fur, 1.0, "carpet")
+	_sphere(Vector3(x + 1.25, 2.35, z), 0.2, fur, 1.0, "carpet")
+	_sphere(Vector3(x + 0.8, 1.8, z + 0.45), 0.22, Color(0.95, 0.85, 0.7), 1.0, "carpet")
 	_sphere(Vector3(x + 0.8, 1.88, z + 0.62), 0.07, Color(0.15, 0.1, 0.1))
 	_sphere(Vector3(x + 0.6, 2.0, z + 0.48), 0.05, Color(0.1, 0.1, 0.1))
 	_sphere(Vector3(x + 1.0, 2.0, z + 0.48), 0.05, Color(0.1, 0.1, 0.1))
-	_sphere(Vector3(x + 0.1, 0.9, z), 0.28, fur)
-	_sphere(Vector3(x + 1.5, 0.9, z), 0.28, fur)
+	_sphere(Vector3(x + 0.1, 0.9, z), 0.28, fur, 1.0, "carpet")
+	_sphere(Vector3(x + 1.5, 0.9, z), 0.28, fur, 1.0, "carpet")
 
 
 func _toy_balls(x: float, rng: RandomNumberGenerator) -> void:
