@@ -12,7 +12,15 @@ godot --path . cutscenes/preview.tscn
 
 # один ролик: запускается сам и после конца играет заново
 godot --path . cutscenes/intro.tscn
+
+# переход в конкретную комнату без инспектора
+godot --path . cutscenes/transition_room.tscn -- room=kitchen
+
+# все ролики подряд в просмотрщике — клавиша 0
 ```
+
+В просмотрщике: `1` intro, `2`/`5`/`6`/`7` переходы (ванная/кухня/гостиная),
+`0` — все ролики по очереди, `3`/`4` — финал и второй круг (появятся на шаге 3).
 
 Скриншоты и проверки:
 
@@ -27,6 +35,9 @@ SHOT_DIR=$PWD/cutscenes/tests/shots godot --path . --fixed-fps 60 \
 
 # полный просмотр, пропуск, повторный запуск, заморозка/разморозка игры
 godot --headless --path . --fixed-fps 60 -s cutscenes/tests/smoke.gd
+
+# цепочка «ролик → finished → следующий ролик» (как кнопка 0 в просмотрщике)
+godot --headless --path . --fixed-fps 60 -s cutscenes/tests/sequence.gd
 ```
 
 ## Устройство

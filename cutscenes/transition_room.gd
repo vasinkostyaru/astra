@@ -95,7 +95,10 @@ func _prepare() -> void:
 	_heroes = $Heroes as Node3D
 	_props = $Props as Node3D
 	_audio = $CutAudio as CutAudio
-	_room = StringName(params.get("room", default_room))
+	var requested := StringName(params.get("room", _cmdline_room()))
+	if requested == &"":
+		requested = default_room
+	_room = requested
 	if not ROOMS.has(String(_room)):
 		push_warning("transition: неизвестная комната %s — беру bathroom" % _room)
 		_room = &"bathroom"
@@ -117,6 +120,14 @@ func _prepare() -> void:
 	fade_to(1.0, 0.0)
 	cam_to(shot_open_target, shot_open_dist, 0.0)
 	print("[cutscene] transition room=", _room)
+
+
+## Комната из командной строки: godot --path . cutscenes/transition_room.tscn -- room=kitchen
+func _cmdline_room() -> StringName:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("room="):
+			return StringName(arg.substr(5))
+	return &""
 
 
 func _build() -> void:
