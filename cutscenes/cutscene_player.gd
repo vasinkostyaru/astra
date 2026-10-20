@@ -29,6 +29,10 @@ var _played: Dictionary = {}
 var _frozen_scene: Node
 var _frozen_mode: Node.ProcessMode = Node.PROCESS_MODE_INHERIT
 var _finishing: bool = false
+## Когда начался ролик (мс): касание, которым его запустили, не должно его же пропустить
+## (на телефоне одно касание = эмулированный клик + отдельное событие касания).
+var _started_ms: int = 0
+const SKIP_GUARD_MS := 500
 
 
 func _ready() -> void:
@@ -88,6 +92,7 @@ func play(name: StringName, params: Dictionary = {}) -> bool:
 		return false
 
 	_finishing = false
+	_started_ms = Time.get_ticks_msec()
 	is_playing = true
 	current_name = name
 	current_params = params
@@ -127,6 +132,9 @@ func _input(event: InputEvent) -> void:
 	if not is_playing:
 		return
 	if Cutscene.is_skip_event(event):
+		if Time.get_ticks_msec() - _started_ms < SKIP_GUARD_MS:
+			get_viewport().set_input_as_handled()
+			return
 		get_viewport().set_input_as_handled()
 		skip()
 
