@@ -40,7 +40,12 @@ func _on_play() -> void:
 	# Ролик-заставка — пока нет пройденных комнат (первый раз или после «сначала»); касание его пропускает.
 	if Game.completed_levels.is_empty():
 		Cutscenes.play(&"intro")
+		# Под роликом первый экран уже затемнён: после ролика он не мелькает, сразу выбор комнаты.
+		fade.color.a = 1.0
 		await Cutscenes.finished
+		_busy = true
+		Game.go_to_rooms()
+		return
 	leave(Game.go_to_rooms)
 
 

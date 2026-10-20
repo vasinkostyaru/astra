@@ -63,6 +63,8 @@ common/physics_interpolation=true
 
 [rendering]
 
+environment/defaults/default_clear_color=Color(0.03, 0.02, 0.02, 1)
+
 renderer/rendering_method="mobile"
 rendering_device/vsync/frame_queue_size=1
 rendering_device/vsync/swapchain_image_count=2
