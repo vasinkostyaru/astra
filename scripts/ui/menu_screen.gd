@@ -10,6 +10,7 @@ var _busy: bool = false
 
 ## Слой интерфейса: фон на слое -1 (под 3D, если оно есть), шторка поверх всего.
 func build_ui() -> void:
+	Game.play_menu_music()
 	var back := CanvasLayer.new()
 	back.layer = -1
 	add_child(back)

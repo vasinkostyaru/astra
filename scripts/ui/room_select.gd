@@ -60,10 +60,7 @@ func _on_card(card: RoomCard) -> void:
 		card.wobble()
 
 
-## «Сначала»: пройденные комнаты забываются, снова показывается интро, потом — выбор комнаты заново.
+## «Сначала»: пройденные комнаты забываются, возвращаемся на первый экран; «играть» снова покажет интро.
 func _on_restart() -> void:
 	Game.reset_progress()
-	Cutscenes.reset_played()
-	Cutscenes.play(&"intro")
-	await Cutscenes.finished
-	leave(Game.go_to_rooms)
+	leave(Game.go_to_start)

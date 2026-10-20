@@ -17,6 +17,11 @@ const SAVE_PATH := "user://save.cfg"
 const CHIME_NOTES: Array[float] = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0]
 const CHIME_BASE := 523.25
 const VOICES := 4
+## Фоновая музыка: колыбельная в меню, игривая мелодия в комнатах (источники — assets/audio/music/SOURCES.txt).
+const MUSIC_MENU := preload("res://assets/audio/music/menu_happy_lullaby.mp3")
+const MUSIC_LEVEL := preload("res://assets/audio/music/level_curious_critters.mp3")
+const MUSIC_DB := -15.0
+const MUSIC_FADE := 1.2
 
 var current_level: int = 0
 var completed_levels: Array[int] = []
@@ -30,6 +35,8 @@ var _pop: AudioStreamWAV
 var _gurgle: AudioStreamWAV
 var _voices: Array[AudioStreamPlayer] = []
 var _next_voice: int = 0
+var _music: Array[AudioStreamPlayer] = []
+var _music_on: int = 0
 
 
 func _ready() -> void:
@@ -41,6 +48,11 @@ func _ready() -> void:
 	_splash = _make_splash()
 	_pop = _make_pop()
 	_gurgle = _make_gurgle()
+	for i in 2:
+		var m := AudioStreamPlayer.new()
+		m.volume_db = -80.0
+		add_child(m)
+		_music.append(m)
 	for i in VOICES:
 		var p := AudioStreamPlayer.new()
 		p.stream = _chime
@@ -298,6 +310,33 @@ func _load_progress() -> void:
 		return
 	for i: int in cfg.get_value("progress", "completed", []):
 		completed_levels.append(i)
+
+
+## Плавно сменить фоновую музыку (та же уже играет — ничего не делаем).
+func play_music(stream: AudioStreamMP3) -> void:
+	var cur := _music[_music_on]
+	if cur.stream == stream and cur.playing:
+		return
+	var old := cur
+	_music_on = 1 - _music_on
+	var nxt := _music[_music_on]
+	stream.loop = true
+	nxt.stream = stream
+	nxt.volume_db = -40.0
+	nxt.play()
+	var tw := create_tween().set_parallel()
+	tw.tween_property(nxt, "volume_db", MUSIC_DB, MUSIC_FADE)
+	if old.playing:
+		tw.tween_property(old, "volume_db", -60.0, MUSIC_FADE)
+		tw.chain().tween_callback(old.stop)
+
+
+func play_menu_music() -> void:
+	play_music(MUSIC_MENU)
+
+
+func play_level_music() -> void:
+	play_music(MUSIC_LEVEL)
 
 
 ## Начать сначала: все комнаты снова не пройдены.

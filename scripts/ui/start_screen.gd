@@ -37,8 +37,8 @@ func _on_play() -> void:
 	if _starting:
 		return
 	_starting = true
-	# Ролик-заставка показывается один раз за запуск; касание его пропускает.
-	if not Cutscenes.was_played(&"intro"):
+	# Ролик-заставка — пока нет пройденных комнат (первый раз или после «сначала»); касание его пропускает.
+	if Game.completed_levels.is_empty():
 		Cutscenes.play(&"intro")
 		await Cutscenes.finished
 	leave(Game.go_to_rooms)

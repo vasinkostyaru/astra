@@ -1,0 +1,5 @@
+menu_happy_lullaby.mp3 — «Happy Lullaby (song17)», cynicmusic, CC0.
+  https://opengameart.org/content/happy-lullaby-song17
+level_curious_critters.mp3 — «Curious Critters (Extended Version)», Matthew Pablo (http://www.matthewpablo.com), CC-BY 3.0.
+  https://opengameart.org/content/curious-critters
+  Перекодировано в 128 кбит/с (ffmpeg), без других изменений.

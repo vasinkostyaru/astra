@@ -34,6 +34,7 @@ func _ready() -> void:
 	hud.jar.total = _required
 	player.fall_limit_y = fall_limit_y
 	Fx.grade(self)
+	Game.play_level_music()
 	if astra:
 		astra.reached_by_player.connect(_on_level_completed)
 
